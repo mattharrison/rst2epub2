@@ -1,0 +1,23 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:py="http://genshi.edgewall.org/">
+<head>
+  <title>${section.title}</title>
+  <style type="text/css">
+h1 { text-align: center; }
+${section.css}
+  </style>
+</head>
+<body>
+  <h1>${section.title}</h1>
+  <py:for each="paragraph in section.text">
+  <p>
+    <py:choose test="type(paragraph)">
+    <py:when test="type([])">
+		<py:choose test="className" py:for="text, className in paragraph"><py:when test="''">$text</py:when><py:otherwise><span class="$className">$text</span></py:otherwise></py:choose>
+    </py:when>
+    <py:otherwise>$paragraph</py:otherwise>
+    </py:choose>
+  </p>
+  </py:for>
+</body>
+</html>

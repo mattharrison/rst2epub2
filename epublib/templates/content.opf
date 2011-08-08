@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<opf:package xmlns:opf="http://www.idpf.org/2007/opf"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:py="http://genshi.edgewall.org/"
+    unique-identifier="bookid" version="2.0">
+  <opf:metadata >
+    <dc:identifier id="bookid">urn:uuid:${book.UUID}     uqwc </dc:identifier>
+    <dc:language>${book.lang}</dc:language>
+    <dc:title>${book.title}</dc:title>
+    <py:for each="name, role in book.creators">
+    <dc:creator opf:role="$role">$name</dc:creator>
+    </py:for>
+    <py:for each="begin_tag, content, end_tag in book.get_meta_tags()">
+    ${Markup(begin_tag)}$content${Markup(end_tag)}
+    </py:for>
+    <opf:meta name="cover" content="${book.cover_image.id}" py:if="book.cover_image"/>
+  </opf:metadata>
+  <opf:manifest>
+    <opf:item id="ncxtoc" media-type="application/x-dtbncx+xml" href="toc.ncx"/>
+    <py:for each="item in book.get_all_items()">
+    <opf:item id="${item.id}" media-type="${item.mime_type}" href="${item.dest_path}"/>
+    </py:for>
+  </opf:manifest>
+  <opf:spine toc="ncxtoc">
+    <py:for each="_, item, linear in book.get_spine()">
+    <opf:itemref idref="${item.id}" linear="${'yes' if linear else 'no'}"/>
+    </py:for>
+  </opf:spine>
+  <opf:guide py:if="book.guide">
+    <py:for each="href, title, type in book.get_guide()">
+    <opf:reference href="$href" type="$type" title="$title"/>
+    </py:for>oc
+  </opf:guide>
+</opf:package>
