@@ -26,6 +26,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+import os
 import sys
 
 
@@ -54,22 +55,64 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         html4css1.HTMLTranslator.__init__(self, document)
         self.book = epub.EpubBook()
         self.sections = []
+        self.body_len_before_node = {}
+        self.section_title = None
+        self.authors = []
+
+    def dispatch_visit(self, node):
+        # mark body length before visiting node
+        self.body_len_before_node[node.__class__.__name__] = len(self.body)
+        html4css1.HTMLTranslator.dispatch_visit(self, node)
+
+    def depart_title(self, node):
+        if self.section_level == 1:
+            if self.section_title is None:
+                start = self.body_len_before_node[node.__class__.__name__]
+                self.section_title = ''.join(self.body[start + 1:])
+        html4css1.HTMLTranslator.depart_title(self, node)
+
+    def depart_author(self, node):
+        start = self.body_len_before_node[node.__class__.__name__]
+        self.authors.append(node.children[0])
 
     def depart_section(self, node):
         html4css1.HTMLTranslator.depart_section(self, node)
         if self.section_level == 0:
             self.sections.append(self.body)
-            self.body=[]
-            html = ''.join(self.sections[-1])
-            self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
-
+            self.body = []
+            html = XHTML_WRAPPER.format(''.join(self.sections[-1]))
+            item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
+            self.book.add_spine_item(item)
+            self.book.add_toc_map_node(item.dest_path, self.section_title) #''.join(self.html_subtitle))
+            self.section_title = None
 
     def get_output(self):
         root_dir = '/tmp/epub'
+        self.book.add_css(os.path.join(
+            os.path.dirname(epub.__file__), 'templates',
+            'main.css'), 'main.css')
+        self.book.set_title(self.title)
+        self.book.add_creator(', '.join(self.authors))
+        self.book.add_title_page()
+        self.book.add_toc_page()
+
         self.book.create_book(root_dir)
         self.book.create_archive(root_dir, root_dir + '.epub')
         return open(root_dir + '.epub').read()
 
+XHTML_WRAPPER = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<title>TITLE THE PAGE HERE</title>
+<meta http-equiv="Content-type" content="application/xhtml+xml;charset=utf8" />
+<link rel="stylesheet" href="main.css" type="text/css" media="all" />
+</head>
+<body>
+{0}
+</body>
+</html>'''
 
 
 class EpubFileOutput(io.FileOutput):
