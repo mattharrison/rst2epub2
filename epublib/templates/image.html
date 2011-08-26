@@ -1,16 +1,15 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
     xmlns:py="http://genshi.edgewall.org/">
 <head>
-  <title>${item.destPath}</title>
+  <title>${item.dest_path}</title>
   <style type="text/css">
-div, img {
-	border: 0;
-	margin: 0;
-	padding: 0;
-}
+  @page {padding: 0pt; margin:0pt}
+  body { text-align: center; padding:0pt; margin: 0pt }
+  div { padding:0pt; margin: 0pt }
+  img { padding:0pt; margin: 0pt }
   </style>
 </head>
 <body>
-  <div><img src="${item.destPath}" alt="${item.destPath}"/></div>
+  <div><img src="${item.dest_path}" alt="cover" style="height: 100%"/></div>
 </body>
 </html>

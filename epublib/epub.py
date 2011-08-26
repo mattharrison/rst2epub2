@@ -130,9 +130,10 @@ class EpubBook:
     def get_all_items(self):
         return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values()), key = lambda x : x.id)
 
-    def add_image(self, src_path, dest_path):
+    def add_image(self, src_path, dest_path, id='image_{0}'):
         item = EpubItem()
-        item.id = 'image_%d' % (len(self.image_items) + 1)
+        #item.id = 'image_' % (len(self.image_items) + 1)
+        item.id = id.format(len(self.image_items) + 1)
         item.src_path = src_path
         item.dest_path = dest_path
         item.mime_type = mimetypes.guess_type(dest_path)[0]
@@ -171,10 +172,10 @@ class EpubBook:
         assert not self.cover_image
         _, ext = os.path.splitext(src_path)
         dest_path = 'cover%s' % ext
-        self.cover_image = self.add_image(src_path, dest_path)
-        #cover_page = self.add_html_for_image(self.cover_image)
-        #self.add_spine_item(cover_page, False, -300)
-        #self.add_guide_item(cover_page.dest_path, '_cover', 'cover')
+        self.cover_image = self.add_image(src_path, dest_path, id='cover')
+        cover_page = self.add_html_for_image(self.cover_image)
+        self.add_spine_item(cover_page, False, -300)
+        self.add_guide_item(cover_page.dest_path, '_cover', 'cover')
 
     def _make_title_page(self):
         assert self.title_page

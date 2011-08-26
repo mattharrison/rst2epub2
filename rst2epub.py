@@ -25,6 +25,16 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+TODO:
+
+* Dropcap cmd line option
+* smartypants option
+* Populate metadata from rst
+* Cover generation
+* Check xhtml validation
+
 """
 import os
 import sys
@@ -37,6 +47,26 @@ from docutils.readers import standalone
 from docutils.writers import html4css1
 
 from epublib import epub
+
+def cwd_decorator(func):
+    """
+    decorator to change cwd to directory containing rst for this function
+    """
+    def wrapper(*args, **kw):
+        cur_dir = os.getcwd()
+        found = False
+        for arg in sys.argv:
+            if arg.endswith(".rst"):
+                found = arg
+                break
+        if found:
+            directory = os.path.dirname(arg)
+            if directory:
+                os.chdir(directory)
+        data = func(*args, **kw)
+        os.chdir(cur_dir)
+        return data
+    return wrapper
 
 class EpubWriter(html4css1.Writer):
     def __init__(self):
@@ -58,6 +88,22 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.body_len_before_node = {}
         self.section_title = None
         self.authors = []
+        self.cover_image = None
+        self._ignore_image = False
+
+    @cwd_decorator
+    def visit_image(self, node):
+        self._ignore_image = False
+        if 'cover' in node.get('classes'):
+            source = node.get('uri')
+            self.cover_image = os.path.abspath(source)
+            self._ignore_image = True
+        if not self._ignore_image:
+            html4css1.HTMLTranslator.visit_image(self, node)
+
+    def depart_image(self, node):
+        if not self._ignore_image:
+            html4css1.HTMLTranslator.depart_image(self, node)
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
@@ -92,9 +138,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             os.path.dirname(epub.__file__), 'templates',
             'main.css'), 'main.css')
         self.book.set_title(self.title)
+
         self.book.add_creator(', '.join(self.authors))
         self.book.add_title_page()
         self.book.add_toc_page()
+        if self.cover_image:
+            self.book.add_cover(self.cover_image)
 
         self.book.create_book(root_dir)
         self.book.create_archive(root_dir, root_dir + '.epub')
