@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?python from genshi import HTML ?>
+<?python from genshi.util import striptags ?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/"
     xmlns:py="http://genshi.edgewall.org/"
     version="2005-1">
@@ -9,12 +11,12 @@
     <meta name="dtb:maxPageNumber" content="0"/>
   </head>
   <docTitle>
-    <text>${book.title}</text>
+    <text>${striptags(book.title)}</text>
   </docTitle>
   <navMap>
     <py:def function="nav_point(node)">
     <navPoint id="navPoint-${node.play_order}" playOrder="${node.play_order}">
-      <navLabel><text>${node.title}</text></navLabel>
+      <navLabel><text>${striptags(node.title)}</text></navLabel>
       <content src="${node.href}"/>
       <py:for each="child in node.children">
       ${navPoint(child)}

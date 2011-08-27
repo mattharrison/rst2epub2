@@ -33,6 +33,8 @@ TODO:
 * smartypants option
 * Populate metadata from rst
 * Cover generation
+ * see http://blog.threepress.org/2009/11/20/best-practices-in-epub-cover-images/
+ * Should probably convert pngs to jpegs
 * Check xhtml validation
 
 """
@@ -90,6 +92,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.authors = []
         self.cover_image = None
         self._ignore_image = False
+        self.first_page = True
+        self.field_name = None
+
+    def dispatch_visit(self, node):
+        # mark body length before visiting node
+        self.body_len_before_node[node.__class__.__name__] = len(self.body)
+        html4css1.HTMLTranslator.dispatch_visit(self, node)
 
     @cwd_decorator
     def visit_image(self, node):
@@ -105,10 +114,53 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         if not self._ignore_image:
             html4css1.HTMLTranslator.depart_image(self, node)
 
-    def dispatch_visit(self, node):
-        # mark body length before visiting node
-        self.body_len_before_node[node.__class__.__name__] = len(self.body)
-        html4css1.HTMLTranslator.dispatch_visit(self, node)
+    def visit_field_list(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.visit_field_list(self, node)
+
+    def depart_field_list(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.depart_field_list(self, node)
+
+    def visit_field(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.visit_field(self, node)
+
+    def depart_field(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.depart_field(self, node)
+
+    def visit_field_body(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.visit_field_body(self, node)
+
+    def depart_field_body(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.depart_field_body(self, node)
+
+    def visit_field_name(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.visit_field_name(self, node)
+
+    def depart_field_name(self, node):
+        if self.first_page:
+            pass
+        else:
+            return html4css1.HTMLTranslator.depart_field_name(self, node)
 
     def depart_title(self, node):
         if self.section_level == 1:
@@ -137,7 +189,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.book.add_css(os.path.join(
             os.path.dirname(epub.__file__), 'templates',
             'main.css'), 'main.css')
-        self.book.set_title(self.title)
+        self.book.set_title(''.join(self.title))
 
         self.book.add_creator(', '.join(self.authors))
         self.book.add_title_page()

@@ -4,7 +4,7 @@
     xmlns:py="http://genshi.edgewall.org/"
     unique-identifier="bookid" version="2.0">
   <opf:metadata >
-    <dc:identifier id="bookid">urn:uuid:${book.UUID}     uqwc </dc:identifier>
+    <dc:identifier id="bookid">urn:uuid:${book.UUID}</dc:identifier>
     <dc:language>${book.lang}</dc:language>
     <dc:title>${book.title}</dc:title>
     <py:for each="name, role in book.creators">
@@ -29,6 +29,6 @@
   <opf:guide py:if="book.guide">
     <py:for each="href, title, type in book.get_guide()">
     <opf:reference href="$href" type="$type" title="$title"/>
-    </py:for>oc
+    </py:for>
   </opf:guide>
 </opf:package>

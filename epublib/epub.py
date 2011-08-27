@@ -36,6 +36,7 @@ import zipfile
 
 
 from genshi.template import TemplateLoader
+from genshi import util
 from lxml import etree
 
 class TocMapNode:
@@ -194,7 +195,7 @@ class EpubBook:
     def _make_toc_page(self):
         assert self.toc_page
         tmpl = self.loader.load('toc.html')
-        stream = tmpl.generate(book = self)
+        stream = tmpl.generate(book=self)
         self.toc_page.html = stream.render('xhtml', doctype = 'xhtml11', drop_xml_decl = False)
 
     def add_toc_page(self):
@@ -225,7 +226,7 @@ class EpubBook:
     def get_toc_map_height(self):
         return max(self.last_node_at_depth.keys())
 
-    def add_toc_map_node(self, href, title, depth = None, parent = None):
+    def add_toc_map_node(self, href, title, depth=None, parent=None):
         node = TocMapNode()
         node.href = href
         node.title = title
@@ -260,7 +261,7 @@ class EpubBook:
         self.toc_map_root.assign_play_order()
         fout = open(os.path.join(self.root_dir, 'OEBPS', 'toc.ncx'), 'w')
         tmpl = self.loader.load('toc.ncx')
-        stream = tmpl.generate(book = self)
+        stream = tmpl.generate(book=self)
         fout.write(stream.render('xml'))
         fout.close()
 
