@@ -36,7 +36,6 @@ import zipfile
 
 
 from genshi.template import TemplateLoader
-from genshi import util
 from lxml import etree
 
 class TocMapNode:

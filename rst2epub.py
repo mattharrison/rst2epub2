@@ -41,7 +41,7 @@ TODO:
 import os
 import sys
 
-
+from genshi.util import striptags
 from docutils.core import Publisher, default_description, \
     default_usage
 from docutils import io
@@ -226,7 +226,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         if self.section_level == 0:
             self.sections.append(self.body)
             self.body = []
-            html = XHTML_WRAPPER.format(''.join(self.sections[-1]))
+            html = XHTML_WRAPPER.format(body=''.join(self.sections[-1]),
+                                        title=striptags(self.section_title))
             if self.is_title_page:
                 self.book.add_title_page(html)
                 self.is_title_page = False
@@ -263,12 +264,12 @@ XHTML_WRAPPER = '''<?xml version="1.0" encoding="UTF-8"?>
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<title>TITLE THE PAGE HERE</title>
+<title>{title}</title>
 <meta http-equiv="Content-type" content="application/xhtml+xml;charset=utf8" />
 <link rel="stylesheet" href="main.css" type="text/css" media="all" />
 </head>
 <body>
-{0}
+{body}
 </body>
 </html>'''
 
