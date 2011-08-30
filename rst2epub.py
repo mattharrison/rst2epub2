@@ -94,11 +94,35 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self._ignore_image = False
         self.first_page = True
         self.field_name = None
+        self.fields = {}
+        self.in_node = {}
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
         self.body_len_before_node[node.__class__.__name__] = len(self.body)
+        # keep track of parents
+        count = self.in_node.setdefault(node.tagname, 0)
+        self.in_node[node.tagname] += 1
         html4css1.HTMLTranslator.dispatch_visit(self, node)
+
+    def dispatch_departure(self, node):
+        self.in_node[node.tagname] -= 1
+        html4css1.HTMLTranslator.dispatch_departure(self, node)
+
+    def at(self, nodename):
+        """
+        shortcut for at/under this node
+        """
+        return self.in_node.get(nodename, False)
+
+    def visit_text(self, node):
+        if self.at('field_name'):
+            self.field_name = node.astext()
+        elif self.at('field_value'):
+            self.fields[self.field_name] = node.astext()
+            self.field_name = None
+        else:
+            html4css1.HTMLTranslator.visit_text(self, node)
 
     @cwd_decorator
     def visit_image(self, node):
@@ -186,6 +210,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def get_output(self):
         root_dir = '/tmp/epub'
+        for k,v in self.fields.items():
+            self.book.add_meta(k, v)
         self.book.add_css(os.path.join(
             os.path.dirname(epub.__file__), 'templates',
             'main.css'), 'main.css')
