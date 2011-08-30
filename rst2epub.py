@@ -96,6 +96,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.field_name = None
         self.fields = {}
         self.in_node = {}
+        self.is_title_page = False
+        self.first_paragraph = True
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
@@ -106,7 +108,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         html4css1.HTMLTranslator.dispatch_visit(self, node)
 
     def dispatch_departure(self, node):
-        self.in_node[node.tagname] -= 1
+        try:
+            self.in_node[node.tagname] -= 1
+        except KeyError as e:
+            print node.tagname
         html4css1.HTMLTranslator.dispatch_departure(self, node)
 
     def at(self, nodename):
@@ -115,14 +120,31 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         """
         return self.in_node.get(nodename, False)
 
-    def visit_text(self, node):
+    def _dumb(self, node):
+        pass
+    visit_comment = _dumb
+    depart_comment = _dumb
+
+    def visit_paragraph(self, node):
+        if self.first_paragraph:
+            self.body.append(self.starttag(node, 'p', '', **{'class':'dropcap'}))
+            self.context.append('</p>\n')
+            self.first_paragraph = False
+        else:
+            html4css1.HTMLTranslator.visit_paragraph(self, node)
+
+    def visit_Text(self, node):
+        txt = node.astext()
         if self.at('field_name'):
             self.field_name = node.astext()
-        elif self.at('field_value'):
+        elif self.at('field_body'):
             self.fields[self.field_name] = node.astext()
             self.field_name = None
+        elif self.at('comment'):
+            if txt == 'titlepage':
+                self.is_title_page = True
         else:
-            html4css1.HTMLTranslator.visit_text(self, node)
+            html4css1.HTMLTranslator.visit_Text(self, node)
 
     @cwd_decorator
     def visit_image(self, node):
@@ -198,15 +220,23 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.authors.append(node.children[0])
 
     def depart_section(self, node):
+        self.first_page = False
+
         html4css1.HTMLTranslator.depart_section(self, node)
         if self.section_level == 0:
             self.sections.append(self.body)
             self.body = []
             html = XHTML_WRAPPER.format(''.join(self.sections[-1]))
-            item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
-            self.book.add_spine_item(item)
-            self.book.add_toc_map_node(item.dest_path, self.section_title) #''.join(self.html_subtitle))
-            self.section_title = None
+            if self.is_title_page:
+                self.book.add_title_page(html)
+                self.is_title_page = False
+            else:
+                item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
+                self.book.add_spine_item(item)
+                self.book.add_toc_map_node(item.dest_path, self.section_title) #''.join(self.html_subtitle))
+                self.section_title = None
+            #self.in_node = {}
+            self.first_paragraph = True
 
     def get_output(self):
         root_dir = '/tmp/epub'
@@ -218,7 +248,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.book.set_title(''.join(self.title))
 
         self.book.add_creator(', '.join(self.authors))
-        self.book.add_title_page()
+        # add a rst comment .. titlepage to denote title page
+        #self.book.add_title_page()
         self.book.add_toc_page()
         if self.cover_image:
             self.book.add_cover(self.cover_image)
