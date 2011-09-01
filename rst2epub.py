@@ -48,6 +48,11 @@ from docutils import io
 from docutils.readers import standalone
 from docutils.writers import html4css1
 
+try:
+    import smartypants
+except:
+    smartypants = None
+
 from epublib import epub
 
 def cwd_decorator(func):
@@ -226,7 +231,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         if self.section_level == 0:
             self.sections.append(self.body)
             self.body = []
-            html = XHTML_WRAPPER.format(body=''.join(self.sections[-1]),
+            body = body=''.join(self.sections[-1])
+            if smartypants:
+                body = smartypants.smartyPants(body)
+            html = XHTML_WRAPPER.format(body=body,
                                         title=striptags(self.section_title))
             if self.is_title_page:
                 self.book.add_title_page(html)
