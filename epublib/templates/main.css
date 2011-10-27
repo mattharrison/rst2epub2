@@ -1,0 +1,95 @@
+body { /* font-size:68.75%; line-height:1.25em; */
+ margin:0 auto; border:1px solid #fff; /* width:54em; */ min-height:76.3675em; }
+h1, h2, h3 { margin-top:0; margin-bottom:0; }
+
+h1>p:first-child {
+}
+
+/* don't indent first paragraph */
+div + p, h1 + p, h2 + p, h3 + p,
+li p:first-child,
+p.dropcap,
+div.note p:nth-child(2), div.tip p:nth-child(2){
+    text-indent: 0;
+}
+
+h1 {
+    font-size:1.618em;
+    line-height:2em;
+    font-family: sans-serif;
+}
+
+h2 {
+    margin-top:1em;
+    font-size:1em;
+    padding:1em 0;
+    line-height:2em;
+}
+
+h3 {
+    margin-top:1em;
+    font-size:1em;
+    padding:1em 0;
+    font-variant: small-caps;
+    line-height:2em;
+}
+
+p {
+    text-indent: .5em;
+    margin: 0;
+    text-align: justify;
+}
+
+div.note, div.tip {
+    margin: 1em;
+}
+  div.note p, div.tip p {
+      font-style: italic;
+  }
+
+  div.note .admonition-title, div.tip .admonition-title {
+      font-variant: small-caps;
+      text-indent: 0px;
+  }
+
+pre {
+    margin-left: 1em;
+    font-size: .6em;
+}
+
+
+ul, ol { margin-left: 1em; }
+dd { margin: 0 0 0 40px; }
+nav ul, nav ol { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+
+table {
+  border:1px solid #ccc;
+  border-collapse:collapse;
+  width:90%;
+  margin:5px auto 5px auto;}
+
+thead, tfoot {
+  background-color:#D0E3FA;
+  border:1px solid #aaa;}
+
+tbody {background-color:#FFFFFF;}
+
+th {
+  font-family:monospace;
+  border:1px dotted #aaa;
+  padding:5px;
+  background-color:#EFF6FF;}
+
+td {
+  font-family:sans-serif;
+  font-size:80%;
+  border:1px solid #ccc;
+  padding:5px;
+  text-align:left;}
+
+img {
+    max-width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 5px 0 !important;
+}

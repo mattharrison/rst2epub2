@@ -97,6 +97,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.authors = []
         self.cover_image = None
         self._ignore_image = False
+        self.images = []
         self.first_page = True
         self.field_name = None
         self.fields = {}
@@ -131,11 +132,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     depart_comment = _dumb
 
     def visit_paragraph(self, node):
-        if self.first_paragraph:
-            self.body.append(self.starttag(node, 'p', '', **{'class':'dropcap'}))
-            self.context.append('</p>\n')
-            self.first_paragraph = False
-        else:
+        # if self.first_paragraph:
+        #     self.body.append(self.starttag(node, 'p', '', **{'class':'dropcap'}))
+        #     self.context.append('</p>\n')
+        #     self.first_paragraph = False
+        # else:
+        if 1:
             html4css1.HTMLTranslator.visit_paragraph(self, node)
 
     def visit_Text(self, node):
@@ -158,6 +160,9 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             source = node.get('uri')
             self.cover_image = os.path.abspath(source)
             self._ignore_image = True
+        else:
+            source = node.get('uri')
+            self.images.append(os.path.abspath(source))
         if not self._ignore_image:
             html4css1.HTMLTranslator.visit_image(self, node)
 
@@ -242,7 +247,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             else:
                 item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
                 self.book.add_spine_item(item)
-                self.book.add_toc_map_node(item.dest_path, self.section_title) #''.join(self.html_subtitle))
+                self.book.add_toc_map_node(item.dest_path, striptags(self.section_title)) #''.join(self.html_subtitle))
                 self.section_title = None
             #self.in_node = {}
             self.first_paragraph = True
@@ -250,7 +255,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     def get_output(self):
         root_dir = '/tmp/epub'
         for k,v in self.fields.items():
-            self.book.add_meta(k, v)
+            if k == 'creator':
+                self.book.add_creator(v)
+            else:
+                self.book.add_meta(k, v)
         self.book.add_css(os.path.join(
             os.path.dirname(epub.__file__), 'templates',
             'main.css'), 'main.css')
@@ -261,13 +269,15 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         #self.book.add_title_page()
         self.book.add_toc_page()
         if self.cover_image:
-            self.book.add_cover(self.cover_image)
-
+            self.book.add_cover(self.cover_image, title=''.join(self.title))
+        for i, img_path in enumerate(self.images):
+            parents, name = os.path.split(img_path)
+            self.book.add_image(img_path, name, id='image_{0}'.format(i))
         self.book.create_book(root_dir)
         self.book.create_archive(root_dir, root_dir + '.epub')
         return open(root_dir + '.epub').read()
 
-XHTML_WRAPPER = '''<?xml version="1.0" encoding="UTF-8"?>
+XHTML_WRAPPER = u'''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">

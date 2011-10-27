@@ -38,6 +38,9 @@ import zipfile
 from genshi.template import TemplateLoader
 from lxml import etree
 
+
+COVER_ORDER = -300
+
 class TocMapNode:
 
     def __init__(self):
@@ -130,10 +133,9 @@ class EpubBook:
     def get_all_items(self):
         return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values()), key = lambda x : x.id)
 
-    def add_image(self, src_path, dest_path, id='image_{0}'):
+    def add_image(self, src_path, dest_path, id=None):
         item = EpubItem()
-        #item.id = 'image_' % (len(self.image_items) + 1)
-        item.id = id.format(len(self.image_items) + 1)
+        item.id = id or 'image_{0}.format(len(self.image_items) + 1)
         item.src_path = src_path
         item.dest_path = dest_path
         item.mime_type = mimetypes.guess_type(dest_path)[0]
@@ -141,15 +143,10 @@ class EpubBook:
         self.image_items[dest_path] = item
         return item
 
-    def add_html_for_image(self, image_item):
-        tmpl = self.loader.load('image.html')
-        stream = tmpl.generate(book = self, item = image_item)
-        html = stream.render('xhtml', doctype = 'xhtml11', drop_xml_decl = False)
-        return self.add_html('', '%s.html' % image_item.dest_path, html)
 
-    def add_html(self, src_path, dest_path, html):
+    def add_html(self, src_path, dest_path, html, id=None):
         item = EpubItem()
-        item.id = 'html_%04d' % (len(self.html_items) + 1)
+        item.id = id or 'html_%04d' % (len(self.html_items) + 1)
         item.src_path = src_path
         item.dest_path = dest_path
         item.html = html
@@ -168,14 +165,21 @@ class EpubBook:
         self.css_items[item.dest_path] = item
         return item
 
-    def add_cover(self, src_path):
+    def add_cover(self, src_path, title='_cover'):
         assert not self.cover_image
         _, ext = os.path.splitext(src_path)
         dest_path = 'cover%s' % ext
-        self.cover_image = self.add_image(src_path, dest_path, id='cover')
-        cover_page = self.add_html_for_image(self.cover_image)
-        self.add_spine_item(cover_page, False, -300)
-        self.add_guide_item(cover_page.dest_path, '_cover', 'cover')
+        self.cover_image = self.add_image(src_path, dest_path, id='cover-image')
+        cover_page = self.add_cover_html_for_image(self.cover_image, title)
+        self.add_spine_item(cover_page, False, COVER_ORDER)
+        self.add_guide_item(cover_page.dest_path, title, 'cover')
+
+    def add_cover_html_for_image(self, image_item, title):
+        tmpl = self.loader.load('image.html')
+        image_item.title = title
+        stream = tmpl.generate(book=self, item=image_item)
+        html = stream.render('xhtml', doctype='xhtml11', drop_xml_decl=False)
+        return self.add_html('', 'cover.html', html, id='cover')
 
     def _make_title_page(self):
         assert self.title_page
@@ -185,11 +189,11 @@ class EpubBook:
         stream = tmpl.generate(book = self)
         self.title_page.html = stream.render('xhtml', doctype = 'xhtml11', drop_xml_decl = False)
 
-    def add_title_page(self, html = ''):
+    def add_title_page(self, html=''):
         assert not self.title_page
         self.title_page = self.add_html('', 'title-page.html', html)
         self.add_spine_item(self.title_page, True, -200)
-        self.add_guide_item('title-page.html', 'Title _page', 'title-page')
+        self.add_guide_item('title-page.html', 'Title Page', 'title-page')
 
     def _make_toc_page(self):
         assert self.toc_page
@@ -206,7 +210,7 @@ class EpubBook:
     def get_spine(self):
         return sorted(self.spine)
 
-    def add_spine_item(self, item, linear = True, order = None):
+    def add_spine_item(self, item, linear=True, order=None):
         assert item.dest_path in self.html_items
         if order == None:
             order = (max(order for order, _, _ in self.spine) if self.spine else 0) + 1
@@ -297,7 +301,6 @@ class EpubBook:
         fout = zipfile.ZipFile(output_path, 'w')
         cwd = os.getcwd()
         os.chdir(root_dir)
-        #fout.write('mimetype', compress_type = zipfile.ZIP_STORED)
         fout.writestr('mimetype', 'application/epub+zip',
                       compress_type=zipfile.ZIP_STORED)
         fileList = []
