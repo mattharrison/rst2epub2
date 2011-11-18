@@ -104,6 +104,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.in_node = {}
         self.is_title_page = False
         self.first_paragraph = True
+        self.css = ['main.css']
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
@@ -140,6 +141,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         if 1:
             html4css1.HTMLTranslator.visit_paragraph(self, node)
 
+    @cwd_decorator
     def visit_Text(self, node):
         txt = node.astext()
         if self.at('field_name'):
@@ -150,6 +152,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         elif self.at('comment'):
             if txt == 'titlepage':
                 self.is_title_page = True
+            elif txt.startswith('css:'):
+                paths = txt.split(':')[-1].split(',')
+                self.css = [os.path.abspath(path) for path in paths if path]
+            elif txt == 'nocss':
+                self.css = None
+            elif txt.startswith('addimg:'):
+                self.images.append(os.path.abspath(txt.split(':')[-1]))
         else:
             html4css1.HTMLTranslator.visit_Text(self, node)
 
@@ -238,9 +247,22 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             self.body = []
             body = body=''.join(self.sections[-1])
             if smartypants:
-                body = smartypants.smartyPants(body)
+                #body = smartypants.smartyPants(body)
+                # pass need to ignore pre contents...
+                pass
+            css = ''
+            if self.css:
+                css = ''.join(['<link rel="stylesheet" href="{0}" type="text/css" media="all" />'.format(os.path.basename(item)) for item in self.css])
+                for item in self.css:
+                    if os.path.exists(item):
+                        self.book.add_css(item, os.path.basename(item))
+                    else:
+                        self.book.add_css(os.path.join(os.path.dirname(epub.__file__),
+                                          'templates',
+                                          'main.css'),'main.css')
             html = XHTML_WRAPPER.format(body=body,
-                                        title=striptags(self.section_title))
+                                        title=striptags(self.section_title),
+                css=css)
             if self.is_title_page:
                 self.book.add_title_page(html)
                 self.is_title_page = False
@@ -251,6 +273,22 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 self.section_title = None
             #self.in_node = {}
             self.first_paragraph = True
+            self.css = ['main.css']
+
+    def visit_tgroup(self, node):
+        # don't want colgroup
+        node.stubs = []
+        pass
+
+    def visit_tbody(self, node):
+        # don't want tbody
+        pass
+
+    def depart_tbody(self, node):
+        pass
+
+    visit_thead=visit_tbody
+    depart_thead=depart_tbody
 
     def get_output(self):
         root_dir = '/tmp/epub'
@@ -259,9 +297,9 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 self.book.add_creator(v)
             else:
                 self.book.add_meta(k, v)
-        self.book.add_css(os.path.join(
-            os.path.dirname(epub.__file__), 'templates',
-            'main.css'), 'main.css')
+        # self.book.add_css(os.path.join(
+        #     os.path.dirname(epub.__file__), 'templates',
+        #     'main.css'), 'main.css')
         self.book.set_title(''.join(self.title))
 
         self.book.add_creator(', '.join(self.authors))
@@ -284,7 +322,7 @@ XHTML_WRAPPER = u'''<?xml version="1.0" encoding="UTF-8"?>
 <head>
 <title>{title}</title>
 <meta http-equiv="Content-type" content="application/xhtml+xml;charset=utf8" />
-<link rel="stylesheet" href="main.css" type="text/css" media="all" />
+{css}
 </head>
 <body>
 {body}

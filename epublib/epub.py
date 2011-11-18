@@ -135,7 +135,7 @@ class EpubBook:
 
     def add_image(self, src_path, dest_path, id=None):
         item = EpubItem()
-        item.id = id or 'image_{0}.format(len(self.image_items) + 1)
+        item.id = id or 'image_{0}'.format(len(self.image_items) + 1)
         item.src_path = src_path
         item.dest_path = dest_path
         item.mime_type = mimetypes.guess_type(dest_path)[0]
@@ -156,12 +156,14 @@ class EpubBook:
         return item
 
     def add_css(self, src_path, dest_path):
+        if dest_path in self.css_items:
+            return
         item = EpubItem()
         item.id = 'css_%d' % (len(self.css_items) + 1)
         item.src_path = src_path
         item.dest_path = dest_path
         item.mime_type = 'text/css'
-        assert item.dest_path not in self.css_items
+        #assert item.dest_path not in self.css_items
         self.css_items[item.dest_path] = item
         return item
 
@@ -280,7 +282,7 @@ class EpubBook:
             print 'WRITING ITEM', item.id, item.dest_path
             if item.html:
                 fout = open(os.path.join(self.root_dir, 'OEBPS', item.dest_path), 'w')
-                fout.write(item.html)
+                fout.write(item.html.encode('utf-8'))
                 fout.close()
             else:
                 shutil.copyfile(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))

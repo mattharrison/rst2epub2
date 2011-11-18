@@ -1,6 +1,52 @@
-body { /* font-size:68.75%; line-height:1.25em; */
- margin:0 auto; border:1px solid #fff; /* width:54em; */ min-height:76.3675em; }
-h1, h2, h3 { margin-top:0; margin-bottom:0; }
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6,
+p, blockquote, /* pre */, a, abbr, acronym, address, big, cite, code, del,
+dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub,
+sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form,
+label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+  /* margin: 0; */
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font-size: 100%;
+  vertical-align: baseline;
+  background: transparent; }
+
+/* end reset */
+
+@page {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+body {
+    padding: 0;
+}
+
+h1 {
+  font-size: 1.5em;
+}
+h2 {
+  font-size: 1.2em;
+}
+h3 {
+  font-size: 1.1em;
+}
+
+h1, h2, h3 {
+    page-break-after: avoid;
+    margin-top:1em;
+    margin-bottom:0;
+}
+
+p {
+    line-height: 1.5em;
+    text-indent: 1em;
+    margin: 0;
+    text-align: justify;
+    orphans: 2;
+    widow: 2;
+}
+
 
 h1>p:first-child {
 }
@@ -13,48 +59,12 @@ div.note p:nth-child(2), div.tip p:nth-child(2){
     text-indent: 0;
 }
 
-h1 {
-    font-size:1.618em;
-    line-height:2em;
-    font-family: sans-serif;
-}
-
-h2 {
-    margin-top:1em;
-    font-size:1em;
-    padding:1em 0;
-    line-height:2em;
-}
-
-h3 {
-    margin-top:1em;
-    font-size:1em;
-    padding:1em 0;
-    font-variant: small-caps;
-    line-height:2em;
-}
-
-p {
-    text-indent: .5em;
-    margin: 0;
-    text-align: justify;
-}
-
-div.note, div.tip {
-    margin: 1em;
-}
-  div.note p, div.tip p {
-      font-style: italic;
-  }
-
-  div.note .admonition-title, div.tip .admonition-title {
-      font-variant: small-caps;
-      text-indent: 0px;
-  }
 
 pre {
-    margin-left: 1em;
-    font-size: .6em;
+    margin-left: 2em;
+    font-size: .8em;
+    white-space: pre-wrap;
+    display: block;
 }
 
 
@@ -88,8 +98,38 @@ td {
   text-align:left;}
 
 img {
-    max-width: 95%;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 5px 0 !important;
+    display: inline-block;
+    width: 100%;
+    margin: 1.5em;
+    text-align: center;
 }
+
+
+
+
+div.note, div.tip {
+    /* margin: 2em; */
+    /* margin-bottom: 20px; */
+    display: inline-block;
+    /* border: 1px solid green; */
+    font-size: 90%;
+    width:90%;
+}
+  div.note p, div.tip p {
+      font-style: italic;
+      text-indent: 0px;
+ /* margin: 2em; */
+      margin-bottom: 1em;
+      margin-left: 2em;
+      margin-right: 2em;
+  }
+
+  div.note .admonition-title, div.tip .admonition-title {
+      margin-top: 1em;
+      /* border: 1px solid red; */
+      font-style: oblique;
+      font-variant: small-caps;
+      text-transform: uppercase;
+      text-align:center;
+      page-break-after: avoid;
+  }
