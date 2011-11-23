@@ -1,135 +1,227 @@
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6,
-p, blockquote, /* pre */, a, abbr, acronym, address, big, cite, code, del,
-dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub,
-sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form,
-label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
-  /* margin: 0; */
-  padding: 0;
-  border: 0;
-  outline: 0;
-  font-size: 100%;
-  vertical-align: baseline;
-  background: transparent; }
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, /*ol, ul, li, */
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    /* Note kindle hates margin:0 ! (or margin-left or margin-top set) it inserts newlines galore */
+    /* margin: 0; */
+    margin-right: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    /* font: inherit; */
+    vertical-align: baseline;
+}
+/* /\* HTML5 display-role reset for older browsers *\/ */
+/* article, aside, details, figcaption, figure, */
+/* footer, header, hgroup, menu, nav, section { */
+/* 	display: block; */
+/* } */
+/* body { */
+/* 	line-height: 1; */
+/* } */
+/* ol, ul { */
+/* 	list-style: none; */
+/* } */
+/* blockquote, q { */
+/* 	quotes: none; */
+/* } */
+/* blockquote:before, blockquote:after, */
+/* q:before, q:after { */
+/* 	content: ''; */
+/* 	content: none; */
+/* } */
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
 
 /* end reset */
 
 @page {
-    margin-top: 30px;
-    margin-bottom: 30px;
+     margin-top:30px;
+     margin-bottom:20px;
 }
 
-body {
-    padding: 0;
+div.cover {
+  text-align: center;
+  page-break-after: always;
+  padding: 0px;
+  margin: 0px;
+}
+
+  div.cover img,
+  .cover-img{
+      height: 100%;
+      max-width: 100%;
+      padding: 0px;
+      margin: 0px;
+  }
+
+h1, h2, h3, h4, h5, h6 {
+  -webkit-hyphens: none !important;
+  adobe-hyphenate: none;
+  -moz-hyphens: none;
+  hyphens: none;
+  page-break-after: avoid;
 }
 
 h1 {
-  font-size: 1.5em;
+  font-size:xx-large%;
+  margin-bottom: 3em;
 }
 h2 {
-  font-size: 1.2em;
+  font-size:200%;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 h3 {
-  font-size: 1.1em;
+  font-size:180%;
+}
+h4 {
+  font-size:140%;
+}
+h5 {
+  font-size:110%;
 }
 
-h1, h2, h3 {
-    page-break-after: avoid;
-    margin-top:1em;
-    margin-bottom:0;
+h6 {
+  font-size:100%;
+}
+
+/* Do not indent first paragraph. Mobi will need class='first-para' */
+h1 + p,
+h2 + p,
+h3 + p,
+h4 + p,
+h5 + p,
+h6 + p,
+p.first-para {
+  text-indent:0;
 }
 
 p {
-    line-height: 1.5em;
-    text-indent: 1em;
-    margin: 0;
-    text-align: justify;
-    orphans: 2;
-    widow: 2;
+  text-indent:1em;
+  line-height: 1.5em;
+  margin: 0;
+  text-align: justify;
+  orphans: 2;
+  widow: 2;
+  -webkit-hyphenate-before:3;
+  hyphenate-before:3;
+  -webkit-hyphenate-after:3;
+  hyphenate-after:3;
+  -webkit-hyphenate-lines:2;
+  hyphenate-lines:2;
 }
 
-
-h1>p:first-child {
+.drop {
+  overflow: hidden;
+  line-height: 89%;
+  height: 0.80em;
+  font-size: 281%;
+  margin-right: 0.075em;
+  float:left;
 }
 
-/* don't indent first paragraph */
-div + p, h1 + p, h2 + p, h3 + p,
-li p:first-child,
-p.dropcap,
-div.note p:nth-child(2), div.tip p:nth-child(2){
-    text-indent: 0;
+/* lists */
+ul, ol, dl {
+  margin:1em 0em 1em 0em;
 }
 
+li {
+  line-height:1.5em;
+  orphans:2;
+  widows:2;
+  text-align:justify;
+  text-indent: 0;
+  margin: 0;
+}
 
+/* code for me */
 pre {
-    margin-left: 2em;
-    font-size: .8em;
-    white-space: pre-wrap;
-    display: block;
+  margin-left: 2em;
+  /* margin-top: 1em; */
+  /* margin-bottom: 1em; */
+  font-size: .8em;
+  white-space: pre-wrap;
+  display: block;
 }
 
 
-ul, ol { margin-left: 1em; }
-dd { margin: 0 0 0 40px; }
-nav ul, nav ol { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+/* sidebar */
+div.note,
+div.tip {
+  margin:1em 0em 1em 0em !important;
+  padding:1em 0em 1em 0em !important;
+  border:1px solid #178E7D;
+  page-break-inside:avoid;
+}
 
+p.note-title,
+.admonition-title {
+  margin-top:1em; 		/*mobi doesn't like div margins*/
+  font-size:small;
+  text-align:center;
+  font-weight:bold;
+  font-style:normal;
+  -webkit-hyphens:none;
+  -moz-hyphens:none;
+  hyphens:none;
+  /* margin:0em 1em 0em 1em; */
+}
+
+div.note p,
+.note-p {
+  margin-left: 2em;
+  margin-right: 2em;
+}
+/* Since Kindle doesn't like multiple classes have to have combinations */
+.note-p-first {
+  text-indent:0;
+  margin-left: 2em;
+  margin-right: 2em;
+
+}
+
+
+.center {
+  text-align:center;
+}
+
+.right {
+  text-align:right;
+}
+
+/* Tables */
 table {
-  border:1px solid #ccc;
-  border-collapse:collapse;
-  width:90%;
-  margin:5px auto 5px auto;}
-
-thead, tfoot {
-  background-color:#D0E3FA;
-  border:1px solid #aaa;}
-
-tbody {background-color:#FFFFFF;}
-
-th {
-  font-family:monospace;
-  border:1px dotted #aaa;
-  padding:5px;
-  background-color:#EFF6FF;}
-
-td {
-  font-family:sans-serif;
-  font-size:80%;
-  border:1px solid #ccc;
-  padding:5px;
-  text-align:left;}
-
-img {
-    display: inline-block;
-    width: 100%;
-    margin: 1.5em;
-    text-align: center;
+  width: 100%;
+  page-break-inside: avoid;
 }
 
-
-
-
-div.note, div.tip {
-    /* margin: 2em; */
-    /* margin-bottom: 20px; */
-    display: inline-block;
-    /* border: 1px solid green; */
-    font-size: 90%;
-    width:90%;
+sup {
+  vertical-align: super;
+  font-size: .5em;
 }
-  div.note p, div.tip p {
-      font-style: italic;
-      text-indent: 0px;
- /* margin: 2em; */
-      margin-bottom: 1em;
-      margin-left: 2em;
-      margin-right: 2em;
-  }
 
-  div.note .admonition-title, div.tip .admonition-title {
-      margin-top: 1em;
-      /* border: 1px solid red; */
-      font-style: oblique;
-      font-variant: small-caps;
-      text-transform: uppercase;
-      text-align:center;
-      page-break-after: avoid;
-  }
+sub {
+  vertical-align: sub;
+  font-size: .5em;
+}
+
+.footnote {
+  font-size: .8em;
+}
+
+.footnote-link {
+  font-size: .8em;
+  vertical-align: super;
+}

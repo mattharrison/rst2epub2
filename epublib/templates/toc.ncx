@@ -19,7 +19,7 @@
       <navLabel><text>${striptags(node.title)}</text></navLabel>
       <content src="${node.href}"/>
       <py:for each="child in node.children">
-      ${navPoint(child)}
+      ${nav_point(child)}
       </py:for>
     </navPoint>
     </py:def>

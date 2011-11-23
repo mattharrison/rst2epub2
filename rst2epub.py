@@ -44,7 +44,7 @@ import sys
 from genshi.util import striptags
 from docutils.core import Publisher, default_description, \
     default_usage
-from docutils import io
+from docutils import io, nodes
 from docutils.readers import standalone
 from docutils.writers import html4css1
 
@@ -105,6 +105,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.is_title_page = False
         self.first_paragraph = True
         self.css = ['main.css']
+        self.toc_parents = []
+        self.parent_level = 0
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
@@ -132,14 +134,62 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     visit_comment = _dumb
     depart_comment = _dumb
 
+
     def visit_paragraph(self, node):
-        # if self.first_paragraph:
-        #     self.body.append(self.starttag(node, 'p', '', **{'class':'dropcap'}))
-        #     self.context.append('</p>\n')
-        #     self.first_paragraph = False
-        # else:
-        if 1:
+        if self.should_be_compact_paragraph(node):
+            self.context.append('')
+        elif self.first_paragraph and not self.at('admonition'):
+            self.body.append(self.starttag(node, 'p', '', **{'class':'first-para'}))
+            self.context.append('</p>\n')
+
+        elif self.at('admonition'):
+            if self.first_paragraph:
+                self.body.append(self.starttag(node, 'p', '', **{'class':'note-first-p'}))
+            else:
+                self.body.append(self.starttag(node, 'p', '', **{'class':'note-p'}))
+            self.context.append('</p>\n')
+
+        else:
+             #if 1:
             html4css1.HTMLTranslator.visit_paragraph(self, node)
+        self.first_paragraph = False
+    # def depart_paragraph(self, node):
+    #     if self.first_paragraph:
+
+    def append_class_on_child(self, node, class_, index=0):
+        children = [n for n in node if not isinstance(n, nodes.Invisible)]
+        try:
+            child = children[index]
+        except IndexError:
+            return
+        # should only be one class
+        if child['classes']:
+            child['classes'] = child['classes'][0] + class_
+
+    def set_first_last(self, node):
+        # mobi doesn't like multiple classes per tag
+        self.append_class_on_child(node, '-first', 0)
+        #self.append_class_on_child(node, '-last', -1)
+
+    # def visit_admonition(self, node):
+    #     # mobi don't like those divs, messes up formatting on subsequent elements
+    #     pass
+    # def depart_admonition(self, node):
+    #     pass
+
+    def visit_literal_block(self, node):
+        # mobi needs an extra div here, otherwise headings following <pre> are indented poorly
+        self.body.append(self.starttag(node, 'div'))
+        html4css1.HTMLTranslator.visit_literal_block(self, node)
+
+    def depart_literal_block(self, node):
+        html4css1.HTMLTranslator.depart_literal_block(self, node)
+        self.body.append('</div>\n')
+
+
+    def visit_title(self, node):
+        #print "TITLE", node.parent
+        html4css1.HTMLTranslator.visit_title(self, node)
 
     @cwd_decorator
     def visit_Text(self, node):
@@ -159,6 +209,17 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 self.css = None
             elif txt.startswith('addimg:'):
                 self.images.append(os.path.abspath(txt.split(':')[-1]))
+            elif txt.startswith('toc:parent1'):
+                self.is_parent = True
+                self.parent_level = 1
+                self.toc_parents = []
+            elif txt.startswith('toc:parent2'):
+                self.is_parent = True
+                self.parent_level = 2
+            elif txt.startswith('toc:clear'):
+                self.is_parent = False
+                self.toc_parents = []
+
         else:
             html4css1.HTMLTranslator.visit_Text(self, node)
 
@@ -238,10 +299,17 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         start = self.body_len_before_node[node.__class__.__name__]
         self.authors.append(node.children[0])
 
+    def visit_section(self, node):
+        # too many divs is bad for mobi...
+        #html4css1.HTMLTranslator.visit_section(self, node)
+        self.section_level += 1
+        self.first_paragraph = True
+
+
     def depart_section(self, node):
         self.first_page = False
-
-        html4css1.HTMLTranslator.depart_section(self, node)
+        self.section_level -= 1
+        #html4css1.HTMLTranslator.depart_section(self, node)
         if self.section_level == 0:
             self.sections.append(self.body)
             self.body = []
@@ -269,11 +337,17 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             else:
                 item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
                 self.book.add_spine_item(item)
-                self.book.add_toc_map_node(item.dest_path, striptags(self.section_title)) #''.join(self.html_subtitle))
+                parent = self.toc_parents[-1] if self.toc_parents else None
+                node = self.book.add_toc_map_node(item.dest_path, striptags(self.section_title), parent=parent) #''.join(self.html_subtitle))
+                if self.parent_level == 1:
+                    self.toc_parents = [node]
+                elif self.parent_level == 2:
+                    self.toc_parents = self.toc_parents[:1] + [node]
                 self.section_title = None
             #self.in_node = {}
             self.first_paragraph = True
             self.css = ['main.css']
+            self.parent_level = 0
 
     def visit_tgroup(self, node):
         # don't want colgroup
@@ -353,7 +427,7 @@ def main(args):
     reader = standalone.Reader()
     reader_name = 'standalone'
     writer = EpubWriter()
-    writer_name = 'pseudoxml'
+    writer_name = 'epub2'
     parser = None
     parser_name = 'restructuredtext'
     settings = None

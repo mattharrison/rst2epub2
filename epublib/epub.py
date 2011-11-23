@@ -134,12 +134,14 @@ class EpubBook:
         return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values()), key = lambda x : x.id)
 
     def add_image(self, src_path, dest_path, id=None):
+        if dest_path in self.image_items:
+            return
         item = EpubItem()
         item.id = id or 'image_{0}'.format(len(self.image_items) + 1)
         item.src_path = src_path
         item.dest_path = dest_path
         item.mime_type = mimetypes.guess_type(dest_path)[0]
-        assert item.dest_path not in self.image_items
+        #assert item.dest_path not in self.image_items
         self.image_items[dest_path] = item
         return item
 
