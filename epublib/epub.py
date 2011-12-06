@@ -40,6 +40,8 @@ from lxml import etree
 
 
 COVER_ORDER = -300
+TITLE_ORDER = -200
+TOC_ORDER = -100
 
 class TocMapNode:
 
@@ -96,6 +98,7 @@ class EpubBook:
         self.guide = {}
         self.toc_map_root = TocMapNode()
         self.last_node_at_depth = {0 : self.toc_map_root}
+
 
     def set_title(self, title):
         self.title = title
@@ -196,7 +199,7 @@ class EpubBook:
     def add_title_page(self, html=''):
         assert not self.title_page
         self.title_page = self.add_html('', 'title-page.html', html)
-        self.add_spine_item(self.title_page, True, -200)
+        self.add_spine_item(self.title_page, True, TITLE_ORDER)
         self.add_guide_item('title-page.html', 'Title Page', 'title-page')
 
     def _make_toc_page(self):
@@ -205,19 +208,24 @@ class EpubBook:
         stream = tmpl.generate(book=self)
         self.toc_page.html = stream.render('xhtml', doctype = 'xhtml11', drop_xml_decl = False)
 
-    def add_toc_page(self):
+    def add_toc_page(self, order=TOC_ORDER):
         assert not self.toc_page
         self.toc_page = self.add_html('', 'toc.html', '')
-        self.add_spine_item(self.toc_page, False, -100)
+        self.add_spine_item(self.toc_page, False, order)
         self.add_guide_item('toc.html', 'Table of Contents', 'toc')
 
     def get_spine(self):
-        return sorted(self.spine)
+        results = sorted(self.spine)
+        return results
+
+    def next_order(self):
+        order = (max(order for order, _, _ in self.spine) if self.spine else 0) + 1
+        return order
 
     def add_spine_item(self, item, linear=True, order=None):
         assert item.dest_path in self.html_items
-        if order == None:
-            order = (max(order for order, _, _ in self.spine) if self.spine else 0) + 1
+        if order is None:
+            order = self.next_order()
         self.spine.append((order, item, linear))
 
     def get_guide(self):
@@ -281,7 +289,6 @@ class EpubBook:
 
     def _write_items(self):
         for item in self.get_all_items():
-            print 'WRITING ITEM', item.id, item.dest_path
             if item.html:
                 fout = open(os.path.join(self.root_dir, 'OEBPS', item.dest_path), 'w')
                 fout.write(item.html.encode('utf-8'))

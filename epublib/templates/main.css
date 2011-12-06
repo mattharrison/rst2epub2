@@ -148,12 +148,16 @@ li {
 
 /* code for me */
 pre {
-  margin-left: 2em;
+  margin-left: .5em;
   /* margin-top: 1em; */
-  /* margin-bottom: 1em; */
-  font-size: .8em;
+  margin-bottom: 1em;
+  font-size: .6em;
   white-space: pre-wrap;
   display: block;
+}
+
+div.div-literal-block-admonition {
+  margin-left: 1.0em;
 }
 
 
@@ -181,8 +185,10 @@ p.note-title,
 
 div.note p,
 .note-p {
+  text-indent: 0;
   margin-left: 2em;
   margin-right: 2em;
+  font-style: italic;
 }
 /* Since Kindle doesn't like multiple classes have to have combinations */
 .note-p-first {
@@ -205,6 +211,7 @@ div.note p,
 table {
   width: 100%;
   page-break-inside: avoid;
+  border: 1px;
 }
 
 sup {
@@ -225,3 +232,4 @@ sub {
   font-size: .8em;
   vertical-align: super;
 }
+

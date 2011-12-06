@@ -106,7 +106,9 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.first_paragraph = True
         self.css = ['main.css']
         self.toc_parents = []
+        self.toc_page = False
         self.parent_level = 0
+
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
@@ -179,8 +181,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def visit_literal_block(self, node):
         # mobi needs an extra div here, otherwise headings following <pre> are indented poorly
-        self.body.append(self.starttag(node, 'div'))
-        html4css1.HTMLTranslator.visit_literal_block(self, node)
+        if self.at('admonition'):
+            self.body.append(self.starttag(node, 'div', CLASS='div-literal-block-admonition'))
+            self.body.append(self.starttag(node, 'pre', CLASS='literal-block-admonition'))
+        else:
+            self.body.append(self.starttag(node, 'div'))
+            self.body.append(self.starttag(node, 'pre', CLASS='literal-block'))
+        #html4css1.HTMLTranslator.visit_literal_block(self, node)
 
     def depart_literal_block(self, node):
         html4css1.HTMLTranslator.depart_literal_block(self, node)
@@ -188,8 +195,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
 
     def visit_title(self, node):
-        #print "TITLE", node.parent
         html4css1.HTMLTranslator.visit_title(self, node)
+
 
     @cwd_decorator
     def visit_Text(self, node):
@@ -209,6 +216,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 self.css = None
             elif txt.startswith('addimg:'):
                 self.images.append(os.path.abspath(txt.split(':')[-1]))
+            elif txt.startswith('toc:show'):
+                self.toc_page = True
             elif txt.startswith('toc:parent1'):
                 self.is_parent = True
                 self.parent_level = 1
@@ -299,11 +308,22 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         start = self.body_len_before_node[node.__class__.__name__]
         self.authors.append(node.children[0])
 
+    def visit_transition(self, node):
+        # hack to have titleless chapter
+        self.reset_chapter()
+
     def visit_section(self, node):
         # too many divs is bad for mobi...
         #html4css1.HTMLTranslator.visit_section(self, node)
+        if self.section_level == 0:
+            if self.body:
+                self.create_chapter()
+            else:
+                self.reset_chapter()
         self.section_level += 1
         self.first_paragraph = True
+
+
 
 
     def depart_section(self, node):
@@ -311,43 +331,61 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.section_level -= 1
         #html4css1.HTMLTranslator.depart_section(self, node)
         if self.section_level == 0:
-            self.sections.append(self.body)
-            self.body = []
-            body = body=''.join(self.sections[-1])
-            if smartypants:
-                #body = smartypants.smartyPants(body)
-                # pass need to ignore pre contents...
-                pass
-            css = ''
-            if self.css:
-                css = ''.join(['<link rel="stylesheet" href="{0}" type="text/css" media="all" />'.format(os.path.basename(item)) for item in self.css])
-                for item in self.css:
-                    if os.path.exists(item):
-                        self.book.add_css(item, os.path.basename(item))
-                    else:
-                        self.book.add_css(os.path.join(os.path.dirname(epub.__file__),
-                                          'templates',
-                                          'main.css'),'main.css')
-            html = XHTML_WRAPPER.format(body=body,
-                                        title=striptags(self.section_title),
-                css=css)
-            if self.is_title_page:
-                self.book.add_title_page(html)
-                self.is_title_page = False
-            else:
-                item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
-                self.book.add_spine_item(item)
-                parent = self.toc_parents[-1] if self.toc_parents else None
-                node = self.book.add_toc_map_node(item.dest_path, striptags(self.section_title), parent=parent) #''.join(self.html_subtitle))
-                if self.parent_level == 1:
-                    self.toc_parents = [node]
-                elif self.parent_level == 2:
-                    self.toc_parents = self.toc_parents[:1] + [node]
-                self.section_title = None
-            #self.in_node = {}
-            self.first_paragraph = True
-            self.css = ['main.css']
-            self.parent_level = 0
+            self.create_chapter()
+
+    def create_chapter(self):
+        self.sections.append(self.body)
+        self.body = []
+        body = ''.join(self.sections[-1])
+        if smartypants:
+            #body = smartypants.smartyPants(body)
+            # pass need to ignore pre contents...
+            pass
+        css = ''
+        if self.css:
+            css = ''.join(['<link rel="stylesheet" href="{0}" type="text/css" media="all" />'.format(os.path.basename(item)) for item in self.css])
+            for item in self.css:
+                if os.path.exists(item):
+                    self.book.add_css(item, os.path.basename(item))
+                else:
+                    self.book.add_css(os.path.join(os.path.dirname(epub.__file__),
+                                      'templates',
+                                      'main.css'),'main.css')
+        title = ''
+        if self.section_title:
+            title=striptags(self.section_title)
+
+        html = XHTML_WRAPPER.format(body=body,
+                                    title=title,
+                                    css=css)
+
+        if self.is_title_page:
+            self.book.add_title_page(html)
+            # clear out toc_map_node
+            self.book.last_node_at_depth = {0:self.book.toc_map_root}
+
+            self.is_title_page = False
+        elif self.toc_page:
+            self.book.add_toc_page(order=self.book.next_order())
+            self.toc_page = False
+        else:
+            item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
+            self.book.add_spine_item(item)
+            parent = self.toc_parents[-1] if self.toc_parents else None
+            node = self.book.add_toc_map_node(item.dest_path, striptags(self.section_title), parent=parent) #''.join(self.html_subtitle))
+            if self.parent_level == 1:
+                self.toc_parents = [node]
+            elif self.parent_level == 2:
+                self.toc_parents = self.toc_parents[:1] + [node]
+        self.reset_chapter()
+
+    def reset_chapter(self):
+        self.section_title = None
+        #self.in_node = {}
+        self.first_paragraph = True
+        self.css = ['main.css']
+        self.parent_level = 0
+        self.section_level = 0
 
     def visit_tgroup(self, node):
         # don't want colgroup
@@ -379,7 +417,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.book.add_creator(', '.join(self.authors))
         # add a rst comment .. titlepage to denote title page
         #self.book.add_title_page()
-        self.book.add_toc_page()
+        #self.book.add_toc_page(order=self.toc_loc)
         if self.cover_image:
             self.book.add_cover(self.cover_image, title=''.join(self.title))
         for i, img_path in enumerate(self.images):
