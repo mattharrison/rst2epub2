@@ -93,7 +93,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.book = epub.EpubBook()
         self.sections = []
         self.body_len_before_node = {}
-        self.section_title = None
+        self.section_title = ''
         self.authors = []
         self.cover_image = None
         self._ignore_image = False
@@ -299,7 +299,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def depart_title(self, node):
         if self.section_level == 1:
-            if self.section_title is None:
+            if self.section_title == '':
                 start = self.body_len_before_node[node.__class__.__name__]
                 self.section_title = ''.join(self.body[start + 1:])
         html4css1.HTMLTranslator.depart_title(self, node)
@@ -380,7 +380,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.reset_chapter()
 
     def reset_chapter(self):
-        self.section_title = None
+        self.section_title = ''
         #self.in_node = {}
         self.first_paragraph = True
         self.css = ['main.css']
