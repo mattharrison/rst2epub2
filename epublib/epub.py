@@ -76,7 +76,9 @@ class EpubItem:
 class EpubBook:
 
     def __init__(self):
-        self.loader = TemplateLoader('epublib/templates')
+        #self.loader = TemplateLoader('epublib/templates')
+        temp_dir = os.path.dirname(os.path.abspath(__file__))
+        self.loader = TemplateLoader(os.path.join(temp_dir,'templates'))
 
         self.root_dir = ''
         self.UUID = uuid.uuid1()
@@ -291,7 +293,12 @@ class EpubBook:
         for item in self.get_all_items():
             if item.html:
                 fout = open(os.path.join(self.root_dir, 'OEBPS', item.dest_path), 'w')
-                fout.write(item.html.encode('utf-8'))
+                if isinstance(item.html, str):
+                    fout.write(item.html)
+                else:
+                    fout.write(item.html.encode('utf-8'))
+                #fout.write(item.html.decode('utf-8'))
+                #fout.write(item.html)
                 fout.close()
             else:
                 shutil.copyfile(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))

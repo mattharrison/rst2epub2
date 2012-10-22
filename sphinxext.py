@@ -1,4 +1,5 @@
 from os import path
+import posixpath
 
 from genshi.util import striptags
 
@@ -11,8 +12,9 @@ from sphinx.builders import Builder
 from sphinx.highlighting import PygmentsBridge
 from sphinx.writers.html import HTMLTranslator
 
-from sphinx.util.nodes import inline_all_toctrees
 from sphinx.util.console import bold, darkgreen, brown
+from sphinx.util.nodes import inline_all_toctrees
+from sphinx.util.osutil import copyfile, relative_uri
 
 from epublib import epub
 import rst2epub
@@ -46,12 +48,16 @@ class MobiTranslator(HTMLTranslator):
         self.add_permalinks = False
         self.css = ['main.css']
         self._images = set()
+        self.doc_path = document.attributes['source']
 
     def visit_compound(self, node):
-        print "COMPOUND", node
+        #print "COMPOUND", node
         # only adding items to table of contents if in toctree
         if 'toctree-wrapper' in node['classes']:
-            self.builder.ebook.add_toc_page(order=self.next_order())
+            try:
+                self.builder.ebook.add_toc_page(order=self.next_order())
+            except AssertionError as e:
+                pass
             self.add_to_toc = True
 
     def depart_compound(self, node):
@@ -106,11 +112,11 @@ class MobiTranslator(HTMLTranslator):
         self.parent = None
 
     def get_output(self):
-        print "IMAGE", self._images
+        #print "IMAGE", self._images
 
-        for i, img_path in enumerate(self._images):
-            parents, name = path.split(img_path)
-            self.builder.ebook.add_image(img_path, name, id='image_{0}'.format(i))
+        # for i, img_path in enumerate(self._images):
+        #     parents, name = path.split(img_path)
+        #     self.builder.ebook.add_image(img_path, name, id='image_{0}'.format(i)                                         )
 
         return self.builder.get_output_data()
 
@@ -118,28 +124,49 @@ class MobiTranslator(HTMLTranslator):
         print "FILL IN"
 
     def visit_image(self, node):
+        olduri = node['uri']
+        import pdb;pdb.set_trace()
+        # rewrite the URI if the environment knows about it
+        # if olduri in self.builder.images:
+        #     node['uri'] = posixpath.join(self.builder.imgpath,
+        #                                  self.builder.images[olduri])
+        #                                  #import pdb; pdb.set_trace()
         print "IMAGE!!!", node, node['uri'], path.abspath(node['uri'])
-        self._images.add(path.abspath(node['uri']))
-        print "images", self._images
+        if path.abspath(olduri) != olduri:
+            pass
+            # # relative
+            # dest = path.join(self.builder.outdir,olduri)
+            # print "COPYING TO", dest
+            # olduri = path.join(path.dirname(self.doc_path),
+            #                    dest)
+        self._images.add(path.abspath(olduri))
+        self.builder.ebook.add_image(path.abspath(olduri), olduri, id='image_{0}'.format(len(self._images)))
         HTMLTranslator.visit_image(self, node)
 
     def visit_section(self, node):
-        #print "SEC", self.section_level, str(node)[:20]
+        print "\n\nSEC", self.section_level, str(node)[:120]
         self.section_level += 1
 
     def depart_section(self, node):
         self.section_level -= 1
-        if self.section_level <= 1:
+        if self.section_level <= int(self.builder.config.mobi_chapter_level):
+            print "CREATE CHAPTER"
             self.create_chapter()
 
     def depart_title(self, node):
+        #print "--TITLE", node.text
+        if not self._title:
+            self._title = striptags(''.join(self.body[1:]))
+        print "\n\n**title",self.section_level,''.join(self.body[1:])[:150]
         if node.parent.hasattr('ids') and node.parent['ids'] and \
-            self.section_level == 2:
+            self.section_level <= int(self.builder.config.mobi_chapter_level):
             print "TITLE",self.section_level,node.parent['ids'][0]
             #self._title = node.parent['ids'][0]
             self._title = striptags(''.join(self.body[1:]))
             print "\t",str(node)[:50]
             print "\tBODY", self.body[:4]
+        else:
+            print "FALSE"
         HTMLTranslator.depart_title(self, node)
 
     depart_pending_xref = visit_pending_xref = implement_me
@@ -159,6 +186,7 @@ class MobiBuilder(Builder):
     def init(self):
         # note not dunder!
         self.ebook = epub.EpubBook()
+        assert self.config.mobi_title
         self.ebook.set_title(self.config.mobi_title)
         if self.config.mobi_cover:
             self.ebook.add_cover(self.config.mobi_cover[0], title=self.config.mobi_title)
@@ -212,9 +240,12 @@ class MobiBuilder(Builder):
             defaults=self.env.settings,
             components=(writer,)).get_default_values()
         doc_name = self.config.master_doc
+        self.imgpath = relative_uri(self.get_target_uri(doc_name), '_images')
         tree = self.env.get_doctree(doc_name)
         master = self.config.master_doc
         tree = inline_all_toctrees(self, set(), master, tree, darkgreen)
+        # copy images into self.images
+        self.post_process_images(tree)
         targetname = self.config.project + '.epub'
         tree.settings = docsettings
         writer.write(tree, rst2epub.EpubFileOutput(destination_path=path.join(self.outdir, targetname)))
@@ -224,18 +255,39 @@ class MobiBuilder(Builder):
         root_dir = '/tmp/mobiext'
         #self.copy_image_files()
         self.ebook.create_book(root_dir)
-        self.ebook.create_archive(root_dir, root_dir + '.epub')
+        book_name =  root_dir + '.epub'
+        self.ebook.create_archive(root_dir, book_name)
+
+        if book_name.endswith('.epub'):
+            import subprocess
+            cmd = "kindlegen2.4 {0}".format(book_name)
+            print "RUNNING", cmd
+            subprocess.call(cmd, shell=True)
+
         return open(root_dir + '.epub').read()
 
         #return self.ebook.readdata()
 
     def finish(self):
+        # copy image files
+        if self.images:
+            self.info(bold('copying images...'), nonl=1)
+            for src, dest in self.images.iteritems():
+                self.info(' '+src, nonl=1)
+                dest_file = path.join(self.outdir, dest)
+                copyfile(path.join(self.srcdir, src),
+                         dest_file)
+            self.info()
         print "FIN"
+
+
 
 def setup(app):
     app.add_builder(MobiBuilder)
     app.add_stylesheet('epublib/templates/main.css')
 
     app.add_config_value('mobi_cover', None, None)
+    # chapter level is depth at which new chapters are created
+    app.add_config_value('mobi_chapter_level', 2, None)
     for name in DC_ITEMS:
         app.add_config_value('mobi_'+name, None, None)

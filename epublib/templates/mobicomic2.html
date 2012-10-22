@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>${page.book.title}</title>
+<style type="text/css">
+/* This first section of the stylesheet is called a CSS Reset.  */
+/* A CSS Reset removes inconsistent formatting that browsers often apply  */
+
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:”;}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}
+
+div.fs {
+  height: ${page.height}px;
+  width: ${page.width}px;
+  position: relative;
+}
+
+  div.fs div {
+    position: absolute;
+  }
+
+  div.fs a {
+    display: block;
+    width : 100%;
+    height: 100%;
+  }
+  div.fs div img.bgimage {
+    height: ${page.height}px;
+    width: ${page.width}px;
+    position: absolute;
+  }
+
+.app-amzn-magnify {
+ background-color: green;
+border: 5px solid  #000000;
+opacity: .5;
+}
+.image {
+  position: absolute;
+  height: ${page.height}px;
+  width: ${page.width}px;
+
+}
+
+div.target-mag {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+/* style */
+  border: 5px solid  #000000;
+ background-color: red;
+}
+
+  div.target-mag img {
+    position: absolute;
+    height: ${page.height * 2}px;
+    width: ${page.width * 2}px;
+  }
+  div.target-mag img.zoom100 {
+    position: absolute;
+    height: 1024px;
+    width: 600px;
+  }
+
+  /* Enter the actual height and width of the image here: this is the zoom factor, regardless of what number you enter in the tag at zoom### - that number only need be larger than 100, but otherwise has no effect on the amount of magnification */
+
+  div.target-mag img.zoom150 {
+    position: absolute;
+    height: 1536px;
+    width: 900px;
+  }
+
+div.target-mag-parent {
+  width:100%;
+  height:100%;
+  display:none;
+}
+
+div.target-mag-lb {
+  height: 100%;
+  width: 100%;
+  background: #333333;
+  opacity:.75;
+}
+
+
+/* Tap Target Zone Size and Position */
+<py:for each="mag in page">
+
+
+#${mag.target_id} {
+  top: ${mag.top}%;
+  left: ${mag.left}%;
+  height: ${mag.height}%;
+  width: ${mag.width}%;
+  border-width: 5px;
+
+}
+#${mag.target_id_mag} {
+  /* Full-Size (900 X 1536) Image Offset for Magnification */
+  top: ${mag.img_top}%;
+  left: ${mag.img_left}%;
+  height: 62%;
+  width: 100%;
+}
+
+  #${mag.target_id_mag} img {
+    /* Full-Size (900 X 1536) Image Offset for Magnification */
+   top: -10%;
+   /* top: ${mag.img_top}%;*/
+   /* left: ${mag.img_left}%; */
+    left: -70%;
+  }
+</py:for>
+
+/* assorted */
+.center{
+	position: absolute;
+	top: 42%;
+	left: 29%;
+	width: 40%;
+
+}
+
+</style>
+</head>
+
+<body>
+  <div class="fs">
+    <div><img class='image' alt="" src="${img_src}"/></div>
+    <py:for each="mag in page">
+      <div id="${mag.target_id}">
+        <py:choose>
+          <py:when test="mag.txt">
+            TEXT!
+          </py:when>
+          <py:otherwise>
+            <a class="app-amzn-magnify" data-app-amzn-magnify="{'targetId':'${mag.target_id_parent}', 'ordinal':${mag.ordinal}}">
+              ${mag.pre_data}
+            </a>
+          </py:otherwise>
+        </py:choose>
+      </div>
+    </py:for>
+    <py:for each="mag in page">
+      <div id="${mag.target_id_parent}" class="target-mag-parent">
+        <div class="target-mag-lb"></div>
+        <div id="${mag.target_id_mag}" class="target-mag">
+          ${mag.post_data}
+          <img src="${mag.img_src}" alt=""/>
+        </div>
+      </div>
+    </py:for>
+  </div>
+
+</body>
+</html>

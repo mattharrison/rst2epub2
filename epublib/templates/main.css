@@ -114,6 +114,7 @@ pre {
   margin-bottom: 1em;
   /* mobi fun */
   font-size: 0.6em;
+  font-family: "Courier New", Courier, monospace;
   white-space: pre-wrap;
   display: block; }
 
@@ -151,7 +152,7 @@ div.note p, .note-p {
 .note-p-first {
   text-indent: 0;
   margin-left: 0;
-  margin-right: o; }
+  margin-right: 0; }
 
 /* Tables */
 table {

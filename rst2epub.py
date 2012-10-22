@@ -38,13 +38,17 @@ TODO:
 * Check xhtml validation
 
 """
+from contextlib import contextmanager
 import os
 import sys
 
+
 from genshi.util import striptags
+import docutils
 from docutils.core import Publisher, default_description, \
     default_usage
 from docutils import io, nodes
+from docutils.parsers.rst import Directive, directives
 from docutils.readers import standalone
 from docutils.writers import html4css1
 
@@ -54,6 +58,22 @@ except:
     smartypants = None
 
 from epublib import epub
+
+
+@contextmanager
+def cwd_cm():
+    cur_dir = os.getcwd()
+    found = False
+    for arg in sys.argv:
+        if arg.endswith(".rst"):
+            found = arg
+            break
+    if found:
+        directory = os.path.dirname(arg)
+        if directory:
+            os.chdir(directory)
+    yield
+    os.chdir(cur_dir)
 
 def cwd_decorator(func):
     """
@@ -116,6 +136,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         # keep track of parents
         count = self.in_node.setdefault(node.tagname, 0)
         self.in_node[node.tagname] += 1
+        #print "NAME", node.tagname, node.__class__.__name__
         html4css1.HTMLTranslator.dispatch_visit(self, node)
 
     def dispatch_departure(self, node):
@@ -194,18 +215,38 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.body.append('</div>\n')
 
 
-    def visit_title(self, node):
-        html4css1.HTMLTranslator.visit_title(self, node)
+
+
+
+    def visit_meta(self, node):
+        # support gutenberg extensions
+        # http://www.gutenberg.org/wiki/Gutenberg:The_PG_boilerplate_for_RST
+        name = node.get('name', '')
+        if name.startswith('DC'):
+            self.fields[name[3:]] = node.get('content')
+        elif name.startswith('coverpage'):
+            with cwd_cm():
+                cover_page = node.get('content')
+                self.cover_image = os.path.abspath(cover_page)
+
 
 
     @cwd_decorator
     def visit_Text(self, node):
+        if "Copyright" in str(node):
+            print self.body
         txt = node.astext()
         if self.at('field_name'):
             self.field_name = node.astext()
         elif self.at('field_body'):
-            self.fields[self.field_name] = node.astext()
-            self.field_name = None
+            pass
+            # if self.field_name is None:
+            #     import pdb; pdb.set_trace()
+            # self.fields[self.field_name] = node.astext()
+            # self.field_name = None
+        elif self.at('generated'):#  and 'sectnum' in node.get('classes'):
+            # avoid <generated classes="sectnum">5.1</generated>
+            pass
         elif self.at('comment'):
             if txt == 'titlepage':
                 self.is_title_page = True
@@ -217,6 +258,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             elif txt.startswith('addimg:'):
                 self.images.append(os.path.abspath(txt.split(':')[-1]))
             elif txt.startswith('toc:show'):
+                # old school hack now overriding .. contents::
+                # see visit_epubcontent
                 self.toc_page = True
             elif txt.startswith('toc:parent1'):
                 self.is_parent = True
@@ -231,6 +274,17 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
         else:
             html4css1.HTMLTranslator.visit_Text(self, node)
+
+    def visit_epubcontent(self, node):
+        if self.body:
+            # create an existing chapter
+            self.create_chapter()
+        self.toc_page = True
+        # self.create_chapter()
+
+    def depart_epubcontent(self, node):
+        self.section_level = 0
+        #self.create_chapter()
 
     @cwd_decorator
     def visit_image(self, node):
@@ -275,7 +329,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def visit_field_body(self, node):
         if self.first_page:
-            pass
+            #pass
+            # need to deal with para's that have multiple text children
+            # such as foo... |copy| foo :(
+            self.fields[self.field_name] = node.astext()
         else:
             return html4css1.HTMLTranslator.visit_field_body(self, node)
 
@@ -297,29 +354,38 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         else:
             return html4css1.HTMLTranslator.depart_field_name(self, node)
 
+    def visit_title(self, node):
+        print "TITLE", self.section_level, node
+        html4css1.HTMLTranslator.visit_title(self, node)
+
     def depart_title(self, node):
+        print "DEPTIT", self.section_level,  node
         if self.section_level == 1:
             if self.section_title == '':
                 start = self.body_len_before_node[node.__class__.__name__]
                 self.section_title = ''.join(self.body[start + 1:])
+                print "DEPART TITLE", self.section_title, node#,  self.body
         html4css1.HTMLTranslator.depart_title(self, node)
+
 
     def depart_author(self, node):
         start = self.body_len_before_node[node.__class__.__name__]
         self.authors.append(node.children[0])
 
-    def visit_transition(self, node):
+    def visit_transition2(self, node):
         # hack to have titleless chapter
         self.reset_chapter()
 
     def visit_section(self, node):
         # too many divs is bad for mobi...
         #html4css1.HTMLTranslator.visit_section(self, node)
+
         if self.section_level == 0:
             if self.body:
                 self.create_chapter()
             else:
                 self.reset_chapter()
+        print self.section_level, str(node)[:20]
         self.section_level += 1
         self.first_paragraph = True
 
@@ -328,12 +394,20 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def depart_section(self, node):
         self.first_page = False
-        self.section_level -= 1
+        if self.section_level >= 1:
+            self.section_level -= 1
         #html4css1.HTMLTranslator.depart_section(self, node)
+        print "DEPSEC", self.section_level,  str(node)[:50]
         if self.section_level == 0:
             self.create_chapter()
 
+    def visit_generated(self, node):
+        print "GEN", node
+
+    #depart_generated = depart_section
+
     def create_chapter(self):
+        print "CC"
         self.sections.append(self.body)
         self.body = []
         body = ''.join(self.sections[-1])
@@ -352,7 +426,9 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                                       'templates',
                                       'main.css'),'main.css')
         title = ''
-        if self.section_title:
+        if 'title' in self.fields:
+            title = self.fields['title']
+        elif self.section_title:
             title=striptags(self.section_title)
 
         html = XHTML_WRAPPER.format(body=body,
@@ -360,6 +436,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                                     css=css)
 
         if self.is_title_page:
+            print "ADDING TITLE", self.title
             self.book.add_title_page(html)
             # clear out toc_map_node
             self.book.last_node_at_depth = {0:self.book.toc_map_root}
@@ -405,14 +482,17 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     def get_output(self):
         root_dir = '/tmp/epub'
         for k,v in self.fields.items():
+            print "K", k, 'V', v
             if k == 'creator':
                 self.book.add_creator(v)
+            elif k.lower() == 'title':
+                self.book.set_title(v)
             else:
                 self.book.add_meta(k, v)
         # self.book.add_css(os.path.join(
         #     os.path.dirname(epub.__file__), 'templates',
         #     'main.css'), 'main.css')
-        self.book.set_title(''.join(self.title))
+        #self.book.set_title(''.join(self.title))
 
         self.book.add_creator(', '.join(self.authors))
         # add a rst comment .. titlepage to denote title page
@@ -460,13 +540,37 @@ class EpubFileOutput(io.FileOutput):
             sys.exit(1)
         self.opened = 1
 
+
+class epubcontent(nodes.Element):
+    # change normal TOC to epubcontent
+    tagname = 'epubcontent'
+
+
+class Contents(Directive):
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+    option_spec = { 'class': directives.class_option,
+                    'local': directives.flag,
+                    'depth': directives.nonnegative_int,
+                    'page-numbers': directives.flag }
+    def run(self):
+        return [epubcontent()]
+
+
+class Parser(docutils.parsers.rst.Parser):
+    def __init__(self):
+        directives.register_directive('contents', Contents)
+        docutils.parsers.rst.Parser.__init__(self)
+
+
 def main(args):
     argv = None
     reader = standalone.Reader()
     reader_name = 'standalone'
     writer = EpubWriter()
     writer_name = 'epub2'
-    parser = None
+    parser = Parser()
     parser_name = 'restructuredtext'
     settings = None
     settings_spec = None
