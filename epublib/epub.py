@@ -36,7 +36,10 @@ import zipfile
 
 
 from genshi.template import TemplateLoader
-from lxml import etree
+try:
+    from lxml import etree
+except ImportError as e:
+    import xml.etree.ElementTree as etree
 
 
 COVER_ORDER = -300
