@@ -137,7 +137,8 @@ div.target-mag-lb {
             TEXT!
           </py:when>
           <py:otherwise>
-            <a class="app-amzn-magnify" data-app-amzn-magnify="{'targetId':'${mag.target_id_parent}', 'ordinal':${mag.ordinal}}">
+            <!--<a class="app-amzn-magnify" data-app-amzn-magnify="{'targetId':'${mag.target_id_parent}', 'ordinal':${mag.ordinal}}" fail="true"> -->
+            <a class="app-amzn-magnify" data-app-amzn-magnify="${mag.json_junk()}" >
               ${mag.pre_data}
             </a>
           </py:otherwise>

@@ -87,6 +87,13 @@ class Mag(object):
         return self.target_id + "-magTarget"
 
 
+    def json_junk(self):
+        # kf8 really cares about double quotes on the inside...
+        # only took 33 attempts to figure this out
+        result = '{{"targetId":"{0}", "ordinal":{1} }}'.format(self.target_id_parent, self.ordinal)
+        return result
+
+
 class Page(object):
     PARENT_SUFFIX = '-magTargetParent'
     def __init__(self, book, height=1024, width=600):
@@ -332,7 +339,6 @@ opacity: .5;
 <body>
 
 <!-- This is an example of how to use region zoom to magnify an image -->
-
 	<div class="fs">
 		<div>
 			<img src="img3.jpeg" alt="The Serpent Ring" class="image"/>
@@ -345,22 +351,22 @@ opacity: .5;
 			within a magnified image</h2>
 		</div>
 
-		<div id="zoom1">
-			<a class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"zoom1-magTargetParent", "ordinal":4}'>
-				<div class="center">
-					<p>Double-Tap Here To Zoom</p>
-				</div>
-			</a>
-		</div>
 
-		<div id="zoom1-magTargetParent" class="target-mag-parent">
-			<div class="target-mag-lb"></div>
-			<div id="zoom1-magTarget" class="target-mag">
-				<p class="textzoom">Double-tap<br/>to Dismiss, or<br/>
-				Swipe to View<br/>Next Panel</p>
-			<img src="img3.jpeg" alt="Serpent Ring" />
-			</div>
-		</div>
+     <div id="zoom1">
+<!--			<a class="app-amzn-magnify" data-app-amzn-magnify="{'targetId':'zoom1-magTargetParent', 'ordinal':4}" works='False'> -->
+			<a class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"zoom1-magTargetParent", "ordinal":4}' works='True'>
+              <div><p class="center">BEFORE</p></div>
+            </a>
+      </div>
+
+      <div id="zoom1-magTargetParent" class="target-mag-parent">
+        <div class="target-mag-lb"></div>
+        <div id="zoom1-magTarget" class="target-mag">
+          <h2>AFTER</h2>
+          <img src="img1.jpeg" alt="">
+        </div>
+      </div>
+
 
 	</div>
 
@@ -371,7 +377,7 @@ opacity: .5;
 
 def test():
     book = MobiComicBook()
-    book.set_title('Test Comic25')
+    book.set_title('Test Comic33')
     page = book.add_page()
     page.add_bg_image('data/little-nemo-19051015-l.jpeg', 'img1.jpeg')
     #page.add_mag('foo_id_parent', 'foo_id', 20, 20, 30, 60, 30, 30)
