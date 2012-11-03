@@ -377,14 +377,17 @@ opacity: .5;
 
 def test():
     book = MobiComicBook()
-    book.set_title('Test Comic33')
+    title = 'Test Comic34'
+    book.set_title(title)
+    cov_image = 'data/little-nemo-19051015-l.jpeg'
+    book.add_cover(cov_image, title=title)
     page = book.add_page()
     page.add_bg_image('data/little-nemo-19051015-l.jpeg', 'img1.jpeg')
     #page.add_mag('foo_id_parent', 'foo_id', 20, 20, 30, 60, 30, 30)
     page.add_zoom_image(1.5, 10,10,50,50,15,12,pre_data='<div><p class="center">BEFORE</p></div>',
                         post_data='<h2>AFTER</h2>')
-    # page.add_zoom_image(1.5, 50,50,50,50,50,0,pre_data='<p>BEFORE2</p>',
-    #                     post_data='<h2>AFTER2</h2>')
+    page.add_zoom_image(1.5, 50,50,50,50,50,0,pre_data='<p>BEFORE2</p>',
+                         post_data='<h2>AFTER2</h2>')
     # page.add_mag('foo_id_parent', 'foo_id', 50, 70, 80, 20, 70, 70)
     # page.add_mag('foo_id_parent2', 'foo_id2', 50, 70, 80, 20, 70, 70)
     h1 = page.add_html('1.html')
