@@ -17,7 +17,7 @@ div.fs {
   position: relative;
 }
 
-  /*div.fs div {
+  div.fs div {
     position: absolute;
   }
 
@@ -26,23 +26,19 @@ div.fs {
     width : 100%;
     height: 100%;
   }
+
   div.fs div img.bgimage {
     height: ${page.height}px;
     width: ${page.width}px;
     position: absolute;
-  }*/
+  }
 
 .app-amzn-magnify {
  background-color: green;
 border: 5px solid  #000000;
 opacity: .5;
 }
-.image {
-  position: absolute;
-  height: ${page.height}px;
-  width: ${page.width}px;
 
-}
 
 div.target-mag {
   position: absolute;
@@ -131,9 +127,8 @@ div.target-mag-lb {
 <py:if test="add_jquery">
 .debug {
   z-index:100;
-}
-.taget-mag {
-
+  /* would like buttons to stay above lightframe on debug...
+  currently borked */
 }
 </py:if>
 </style>
@@ -144,8 +139,8 @@ div.target-mag-lb {
     var run_magnify = function() {
       // cycle through all target-mag-parent
       var parents = $('.target-mag-parent');
-      console.log(parents);
       var parent;
+
       $('a.next').click(function(event) {
         event.preventDefault();
         if (parent) {
@@ -153,11 +148,11 @@ div.target-mag-lb {
           $(parent).css('display', 'none');
         }
         parent = parents[parent_idx];
-        console.log("JUNK", parent_idx, parent, parents);
         parent_idx += 1;
         // show
           $(parent).css('display', 'block');
       });
+
       $('a.prev').click(function(event) {
         event.preventDefault();
         if (parent) {
@@ -166,8 +161,6 @@ div.target-mag-lb {
         }
         parent_idx -= 1;
         parent = parents[parent_idx];
-        console.log("JUNK", parent_idx, parent, parents);
-
         // show
         $(parent).css('display', 'block');
       });
@@ -185,7 +178,7 @@ div.target-mag-lb {
   <a class='debug prev'>PREV</a>
   <a class='debug next'>NEXT</a>
 </py:if>
-    <div><img class='image' alt="" src="${img_src}"/></div>
+    <div><img class='bgimage' alt="" src="${img_src}"/></div>
     <py:for each="mag in page">
       <div id="${mag.target_id}">
         <py:choose>

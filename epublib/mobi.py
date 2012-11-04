@@ -390,7 +390,7 @@ opacity: .5;
         """
 
 def test():
-    book = MobiComicBook(add_jquery=True)
+    book = MobiComicBook(add_jquery=False)
     title = 'Test Comic35'
     book.set_title(title)
     cov_image = 'data/little-nemo-19051015-l.jpeg'
