@@ -17,14 +17,15 @@ div.fs {
   position: relative;
 }
 
-  div.fs div {
-    position: absolute;
-  }
-
   div.fs a {
     display: block;
     width : 100%;
     height: 100%;
+  }
+
+
+  div.fs div {
+    position: absolute;
   }
 
   div.fs div img.bgimage {
@@ -172,12 +173,12 @@ div.target-mag-lb {
 </head>
 
 <body>
-
-  <div class="fs">
 <py:if test="add_jquery">
   <a class='debug prev'>PREV</a>
   <a class='debug next'>NEXT</a>
 </py:if>
+
+  <div class="fs">
     <div><img class='bgimage' alt="" src="${img_src}"/></div>
     <py:for each="mag in page">
       <div id="${mag.target_id}">
