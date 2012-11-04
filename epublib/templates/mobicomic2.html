@@ -17,7 +17,7 @@ div.fs {
   position: relative;
 }
 
-  div.fs div {
+  /*div.fs div {
     position: absolute;
   }
 
@@ -30,7 +30,7 @@ div.fs {
     height: ${page.height}px;
     width: ${page.width}px;
     position: absolute;
-  }
+  }*/
 
 .app-amzn-magnify {
  background-color: green;
@@ -53,11 +53,13 @@ div.target-mag {
  background-color: red;
 }
 
+/*
   div.target-mag img {
     position: absolute;
     height: ${page.height * 2}px;
     width: ${page.width * 2}px;
   }
+*/
   div.target-mag img.zoom100 {
     position: absolute;
     height: 1024px;
@@ -89,7 +91,6 @@ div.target-mag-lb {
 /* Tap Target Zone Size and Position */
 <py:for each="mag in page">
 
-
 #${mag.target_id} {
   top: ${mag.top}%;
   left: ${mag.left}%;
@@ -100,18 +101,22 @@ div.target-mag-lb {
 }
 #${mag.target_id_mag} {
   /* Full-Size (900 X 1536) Image Offset for Magnification */
-  top: ${mag.img_top}%;
-  left: ${mag.img_left}%;
-  height: 62%;
-  width: 100%;
+  top: ${mag.lb_top}%;
+  left: ${mag.lb_left}%;
+  height: ${mag.lb_height}%;
+  width: ${mag.lb_width}%;
 }
 
   #${mag.target_id_mag} img {
     /* Full-Size (900 X 1536) Image Offset for Magnification */
-   top: -10%;
-   /* top: ${mag.img_top}%;*/
-   /* left: ${mag.img_left}%; */
-    left: -70%;
+   /*top: -10%;*/
+    position: absolute;
+    height: ${page.height * mag.zoom_factor}px;
+    width: ${page.width * mag.zoom_factor}px;
+
+   top: ${mag.zoomed_img_top * mag.zoom_factor}%;
+   left: ${mag.zoomed_img_left * mag.zoom_factor}%;
+    /*left: -70%;*/
   }
 </py:for>
 
@@ -123,12 +128,63 @@ div.target-mag-lb {
 	width: 40%;
 
 }
+<py:if test="add_jquery">
+.debug {
+  z-index:100;
+}
+.taget-mag {
 
+}
+</py:if>
 </style>
+<py:if test="add_jquery">
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+  <script>
+    var parent_idx = 0;
+    var run_magnify = function() {
+      // cycle through all target-mag-parent
+      var parents = $('.target-mag-parent');
+      console.log(parents);
+      var parent;
+      $('a.next').click(function(event) {
+        event.preventDefault();
+        if (parent) {
+          // hide
+          $(parent).css('display', 'none');
+        }
+        parent = parents[parent_idx];
+        console.log("JUNK", parent_idx, parent, parents);
+        parent_idx += 1;
+        // show
+          $(parent).css('display', 'block');
+      });
+      $('a.prev').click(function(event) {
+        event.preventDefault();
+        if (parent) {
+          // hide
+          $(parent).css('display', 'none');
+        }
+        parent_idx -= 1;
+        parent = parents[parent_idx];
+        console.log("JUNK", parent_idx, parent, parents);
+
+        // show
+        $(parent).css('display', 'block');
+      });
+    }
+
+    $(document).ready(run_magnify);
+  </script>
+</py:if>
 </head>
 
 <body>
+
   <div class="fs">
+<py:if test="add_jquery">
+  <a class='debug prev'>PREV</a>
+  <a class='debug next'>NEXT</a>
+</py:if>
     <div><img class='image' alt="" src="${img_src}"/></div>
     <py:for each="mag in page">
       <div id="${mag.target_id}">
