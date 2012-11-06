@@ -1,13 +1,18 @@
+import logging
+import math
+
 from genshi.template import MarkupTemplate, NewTextTemplate
 from genshi.template import TemplateLoader
 from genshi.core import Markup
 from epublib import epub
 
+logging.basicConfig(level=logging.DEBUG)
 # see http://blog.epubandebookhelp.com/2012/05/16/kf8-panel-magnification/
 # and amazon sample book
 
 class MobiComicBook(epub.EpubBook):
-    def __init__(self, resolution='600x1024',
+    def __init__(self, width=600,
+                 height=1024,
                  book_type='comic',
                  region_magnification='true',
                  orientation_lock='none',
@@ -17,6 +22,9 @@ class MobiComicBook(epub.EpubBook):
         self.add_comic_meta('fixed-layout', 'true')
         self.add_comic_meta('orientation-lock', 'portrait' )#orientation_lock)
         self.add_comic_meta('RegionMagnification', 'true')
+        self.width = width
+        self.height = height
+        resolution = '{0}x{1}'.format(width, height)
         self.add_comic_meta('original-resolution', resolution)
         # if book type not specified images limited to 256K
         self.add_comic_meta('book-type', book_type)
@@ -112,6 +120,10 @@ class Mag(object):
         result = '{{"targetId":"{0}", "ordinal":{1} }}'.format(self.target_id_parent, self.ordinal)
         return result
 
+LEFT=1
+RIGHT=2
+DOWN=3
+UP=4
 
 class Page(object):
     PARENT_SUFFIX = '-magTargetParent'
@@ -132,6 +144,38 @@ class Page(object):
     def add_bg_image(self, src_path, dest_path, id=None):
         self.img = self.book.add_image(src_path, dest_path, id)
 
+    def auto_target(self,
+                    whole_target_left, whole_target_top, whole_target_width, whole_target_height,
+                    zoom_factor=2, overlap_percent=10, direction=LEFT):
+        # target is all in percent
+        print "ZF", zoom_factor
+        if direction == LEFT:
+            chunks = whole_target_width*zoom_factor/100.
+            chunk_int = int(math.ceil(chunks))
+            target_left = whole_target_left
+            zoom_left = whole_target_left
+            print "CHUNKS", chunks, "WHOLE WIDTH", whole_target_width
+            for i in range(chunk_int):
+                target_width = whole_target_width/float(chunks)
+                right_side = target_left + target_width
+                if right_side > 100: #whole_target_width:
+                    #target_width = right_side - target_left
+                    target_left = 100 - target_width
+                    zoom_left = 100 - target_width
+                    #target_width = whole_target_width # - target_left
+                print "LEFT", target_left
+                print "RIGHT SIDE", right_side, "TW", target_width
+
+                print "H", self.book.height, "MINUS", - whole_target_height*zoom_factor/2.
+                self.add_zoom_image(zoom_factor,
+                                    target_left, whole_target_top, target_width, whole_target_height,
+                                    0, 50. - whole_target_height*zoom_factor/2., 100, whole_target_height*zoom_factor,
+                                    -zoom_left, 0 - 100*(whole_target_top/float(whole_target_height)/zoom_factor))
+                #zoom_left, -whole_target_top*zoom_factor)
+
+                zoom_left += target_width
+                target_left += whole_target_width/float(chunks)
+
 
     def add_zoom_image(self, zoom_factor,
                        target_left, target_top, target_width, target_height,
@@ -140,6 +184,12 @@ class Page(object):
                        src_path=None, dest_path=None, txt=None,
                        pre_data=None, post_data=None):
         # post data is borked
+        logging.debug("ZOOM IMAGE: tl:{0} tt:{1}: tw:{2} th:{3}\n lb_l:{4} lb_t:{5} lb_w:{6}, lb_h:{7}\n  zl:{8} zt:{9}".format(
+            target_left, target_top, target_width, target_height,
+              lb_left, lb_top, lb_width, lb_height,
+              zoom_left, zoom_top
+            ))
+        print "BAR"
         if src_path and dest_path:
             img = self.book.add_image(src_path, dest_path, None)
         else:
@@ -151,7 +201,8 @@ class Page(object):
             lb_left, lb_top, lb_width, lb_height,
             zoom_left, zoom_top,
             img.dest_path, ordinal,
-            pre_data=pre_data, post_data=post_data)
+            pre_data=pre_data, post_data=post_data,
+            zoom_factor=zoom_factor)
         self.mags.append(mag)
 
     def to_html(self):
@@ -398,16 +449,29 @@ def test():
     page = book.add_page()
     page.add_bg_image('data/little-nemo-19051015-l.jpeg', 'img1.jpeg')
     #page.add_mag('foo_id_parent', 'foo_id', 20, 20, 30, 60, 30, 30)
-    page.add_zoom_image(1.5,
-                        0, 0, 50, 100./6,
-                        0, 50-100./6, 100, 20,
-                        0,0,
-                        pre_data='<div><p class="center">BEFORE</p></div>')
-    page.add_zoom_image(1.5,
-                        50, 0, 50, 100./6,
-                        0, 50-100./6, 100, 20,
-                        -50,0,
-                        pre_data='<div><p class="center">BEFORE</p></div>')
+    page.auto_target(50, 1*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
+                    zoom_factor=3)
+    page.auto_target(0, 0, 100, 100./6, #target_left, target_top, target_width, target_height,
+                    zoom_factor=2)
+    for row in range(1,5):
+        page.auto_target(0, row*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
+                    zoom_factor=2)
+        page.auto_target(50, row*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
+                    zoom_factor=2)
+    for col in range(4):
+        page.auto_target(col*25, 500./6, 25, 100./6, #target_left, target_top, target_width, target_height,
+                    zoom_factor=2)
+
+    # page.add_zoom_image(1.5,
+    #                     0, 0, 50, 100./6,
+    #                     0, 50-100./6, 100, 20,
+    #                     0,0,
+    #                     pre_data='<div><p class="center">BEFORE</p></div>')
+    # page.add_zoom_image(1.5,
+    #                     50, 0, 50, 100./6,
+    #                     0, 50-100./6, 100, 20,
+    #                     -50,0,
+    #                     pre_data='<div><p class="center">BEFORE</p></div>')
     page.add_zoom_image(1.5,50,0,100./6,50,50,0,100,20,0,50,pre_data='<div><p class="center">BEFORE</p></div>')
     # 3rd row
     page.add_zoom_image(1.5,300./6,0,100./6,50,
