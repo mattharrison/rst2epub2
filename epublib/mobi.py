@@ -9,7 +9,7 @@ from epublib import epub
 logging.basicConfig(level=logging.DEBUG)
 # see http://blog.epubandebookhelp.com/2012/05/16/kf8-panel-magnification/
 # and amazon sample book
-
+# http://mathorsinfotech.blogspot.com/2012/06/kf8-fixed-layout-image-zoom-tutorial.html
 class MobiComicBook(epub.EpubBook):
     def __init__(self, width=600,
                  height=1024,
@@ -146,7 +146,8 @@ class Page(object):
 
     def auto_target(self,
                     whole_target_left, whole_target_top, whole_target_width, whole_target_height,
-                    zoom_factor=2, overlap_percent=10, direction=LEFT):
+                    zoom_factor=2, overlap_percent=10, direction=LEFT,
+                    post_data=None):
         # target is all in percent
         print "ZF", zoom_factor
         if direction == LEFT:
@@ -156,7 +157,10 @@ class Page(object):
             zoom_left = whole_target_left
             print "CHUNKS", chunks, "WHOLE WIDTH", whole_target_width
             for i in range(chunk_int):
-                target_width = whole_target_width/float(chunks)
+                if chunks > 1:
+                    target_width = whole_target_width/float(chunks)
+                else:
+                    target_width = whole_target_width
                 right_side = target_left + target_width
                 if right_side > 100: #whole_target_width:
                     #target_width = right_side - target_left
@@ -167,10 +171,17 @@ class Page(object):
                 print "RIGHT SIDE", right_side, "TW", target_width
 
                 print "H", self.book.height, "MINUS", - whole_target_height*zoom_factor/2.
+                lb_width = 100
+                lb_left = 0
+                if whole_target_width * zoom_factor < 100:
+                    print "SMALLER", whole_target_width * zoom_factor
+                    lb_width = whole_target_width * zoom_factor
+                    lb_left = 50 - lb_width/2
                 self.add_zoom_image(zoom_factor,
-                                    target_left, whole_target_top, target_width, whole_target_height,
-                                    0, 50. - whole_target_height*zoom_factor/2., 100, whole_target_height*zoom_factor,
-                                    -zoom_left, 0 - 100*(whole_target_top/float(whole_target_height)/zoom_factor))
+                    target_left, whole_target_top, target_width, whole_target_height,
+                    lb_left, 50. - whole_target_height*zoom_factor/2., lb_width, whole_target_height*zoom_factor,
+                    -zoom_left, 0 - 100*(whole_target_top/float(whole_target_height)/zoom_factor),
+                    post_data=post_data)
                 #zoom_left, -whole_target_top*zoom_factor)
 
                 zoom_left += target_width
@@ -450,38 +461,19 @@ def test():
     page.add_bg_image('data/little-nemo-19051015-l.jpeg', 'img1.jpeg')
     #page.add_mag('foo_id_parent', 'foo_id', 20, 20, 30, 60, 30, 30)
     page.auto_target(50, 1*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
-                    zoom_factor=3)
-    page.auto_target(0, 0, 100, 100./6, #target_left, target_top, target_width, target_height,
-                    zoom_factor=2)
-    for row in range(1,5):
-        page.auto_target(0, row*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
-                    zoom_factor=2)
-        page.auto_target(50, row*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
-                    zoom_factor=2)
+                    zoom_factor=3, post_data='<p class="textzoom">TEST DATA</p>')
+    # page.auto_target(0, 0, 100, 100./6, #target_left, target_top, target_width, target_height,
+    #                 zoom_factor=2)
+    # for row in range(1,5):
+    #     page.auto_target(0, row*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
+    #                 zoom_factor=2)
+    #     page.auto_target(50, row*100./6, 50, 100./6, #target_left, target_top, target_width, target_height,
+    #                 zoom_factor=2)
     for col in range(4):
         page.auto_target(col*25, 500./6, 25, 100./6, #target_left, target_top, target_width, target_height,
                     zoom_factor=2)
 
-    # page.add_zoom_image(1.5,
-    #                     0, 0, 50, 100./6,
-    #                     0, 50-100./6, 100, 20,
-    #                     0,0,
-    #                     pre_data='<div><p class="center">BEFORE</p></div>')
-    # page.add_zoom_image(1.5,
-    #                     50, 0, 50, 100./6,
-    #                     0, 50-100./6, 100, 20,
-    #                     -50,0,
-    #                     pre_data='<div><p class="center">BEFORE</p></div>')
-    page.add_zoom_image(1.5,50,0,100./6,50,50,0,100,20,0,50,pre_data='<div><p class="center">BEFORE</p></div>')
-    # 3rd row
-    page.add_zoom_image(1.5,300./6,0,100./6,50,
-                        0,0,100,20,
-                        300./6,0,
-                        pre_data='<div><p class="center">BEFORE</p></div>')
-    #page.add_zoom_image(1.5, 50,50,50,50,50,0,pre_data='<p>BEFORE2</p>',
-    #                     post_data='<h2>AFTER2</h2>')
-    # page.add_mag('foo_id_parent', 'foo_id', 50, 70, 80, 20, 70, 70)
-    # page.add_mag('foo_id_parent2', 'foo_id2', 50, 70, 80, 20, 70, 70)
+        #page.add_zoom_image(1.5,50,0,100./6,50,50,0,100,20,0,50,pre_data='<div><p class="center">BEFORE</p></div>')
     h1 = page.add_html('1.html')
     book.add_spine_item(h1)
 

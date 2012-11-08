@@ -27,19 +27,22 @@ div.fs {
   div.fs div {
     position: absolute;
   }
+  div.block {
+    display: block;
+  }
 
   div.fs div img.bgimage {
     height: ${page.height}px;
     width: ${page.width}px;
     position: absolute;
   }
-
+<py:if test="add_jquery">
 .app-amzn-magnify {
  background-color: green;
 border: 5px solid  #000000;
 opacity: .5;
 }
-
+</py:if>
 
 div.target-mag {
   position: absolute;
@@ -50,26 +53,6 @@ div.target-mag {
  background-color: red;
 }
 
-/*
-  div.target-mag img {
-    position: absolute;
-    height: ${page.height * 2}px;
-    width: ${page.width * 2}px;
-  }
-*/
-  div.target-mag img.zoom100 {
-    position: absolute;
-    height: 1024px;
-    width: 600px;
-  }
-
-  /* Enter the actual height and width of the image here: this is the zoom factor, regardless of what number you enter in the tag at zoom### - that number only need be larger than 100, but otherwise has no effect on the amount of magnification */
-
-  div.target-mag img.zoom150 {
-    position: absolute;
-    height: 1536px;
-    width: 900px;
-  }
 
 div.target-mag-parent {
   width:100%;
@@ -84,7 +67,10 @@ div.target-mag-lb {
   opacity:.75;
 }
 
-
+p.textzoom {
+  z-index: 1;
+  font-size: 150%
+}
 /* Tap Target Zone Size and Position */
 <py:for each="mag in page">
 
@@ -113,7 +99,12 @@ div.target-mag-lb {
     width: ${page.width * mag.zoom_factor}px;
 
    top: ${mag.zoomed_img_top * mag.zoom_factor}%;
+<py:if test="mag.lb_left > 0">
+   left: ${mag.zoomed_img_left * 4}%;
+</py:if>
+<py:if test="mag.lb_left == 0">
    left: ${mag.zoomed_img_left * mag.zoom_factor}%;
+</py:if>
     /*left: -70%;*/
   }
 </py:for>
@@ -200,9 +191,10 @@ div.target-mag-lb {
       <div id="${mag.target_id_parent}" class="target-mag-parent">
         <div class="target-mag-lb"></div>
         <div id="${mag.target_id_mag}" class="target-mag">
-          ${mag.post_data}
           <img src="${mag.img_src}" alt=""/>
+          ${mag.post_data}
         </div>
+
       </div>
     </py:for>
   </div>
