@@ -128,6 +128,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.toc_parents = []
         self.toc_page = False
         self.parent_level = 0
+        self.guide_type=None
 
 
     def dispatch_visit(self, node):
@@ -250,6 +251,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         elif self.at('comment'):
             if txt == 'titlepage':
                 self.is_title_page = True
+            elif txt.startswith('guide:'):
+                self.guide_type=txt.split(':')[-1]
             elif txt.startswith('css:'):
                 paths = txt.split(':')[-1].split(',')
                 self.css = [os.path.abspath(path) for path in paths if path]
@@ -389,15 +392,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.section_level += 1
         self.first_paragraph = True
 
-
-
-
     def depart_section(self, node):
         self.first_page = False
         if self.section_level >= 1:
             self.section_level -= 1
         #html4css1.HTMLTranslator.depart_section(self, node)
-        print "DEPSEC", self.section_level,  str(node)[:50]
+        print "DEPSEC", self.section_level,  str(node)[:50], self.guide_type
         if self.section_level == 0:
             self.create_chapter()
 
@@ -446,7 +446,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             self.book.add_toc_page(order=self.book.next_order())
             self.toc_page = False
         else:
-            item = self.book.add_html('', '{0}.html'.format(len(self.sections)), html)
+            dst = '{0}.html'.format(len(self.sections))
+            item = self.book.add_html('', dst, html)
+            if self.guide_type:
+                self.book.add_guide_item(dst, self.section_title, self.guide_type)
             self.book.add_spine_item(item)
             parent = self.toc_parents[-1] if self.toc_parents else None
             node = self.book.add_toc_map_node(item.dest_path, striptags(self.section_title), parent=parent) #''.join(self.html_subtitle))
@@ -463,6 +466,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.css = ['main.css']
         self.parent_level = 0
         self.section_level = 0
+        self.guide_type = None
 
     def visit_tgroup(self, node):
         # don't want colgroup

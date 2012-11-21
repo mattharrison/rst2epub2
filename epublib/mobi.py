@@ -208,9 +208,9 @@ class Page(object):
         tid = self.book.get_target_id()
         ordinal = self.book.get_ordinal()
         mag = Mag(txt, tid+self.PARENT_SUFFIX, tid,
-            target_left, target_top, target_width, target_height,
-            lb_left, lb_top, lb_width, lb_height,
-            zoom_left, zoom_top,
+            int(target_left), int(target_top), int(target_width), int(target_height),
+            int(lb_left), int(lb_top), int(lb_width), int(lb_height),
+            int(zoom_left), int(zoom_top),
             img.dest_path, ordinal,
             pre_data=pre_data, post_data=post_data,
             zoom_factor=zoom_factor)
