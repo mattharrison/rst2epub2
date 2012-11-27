@@ -94,6 +94,8 @@ class EpubBook:
         self.image_items = {}
         self.html_items = {}
         self.css_items = {}
+        self.font_items = {}
+
 
         self.cover_image = None
         self.title_page = None
@@ -139,7 +141,7 @@ class EpubBook:
         return sorted(self.css_items.values(), key = lambda x : x.id)
 
     def get_all_items(self):
-        return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values()), key = lambda x : x.id)
+        return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values(), self.font_items.values()), key = lambda x : x.id)
 
     def add_image(self, src_path, dest_path, id=None):
         if dest_path in self.image_items:
@@ -163,6 +165,23 @@ class EpubBook:
         item.mime_type = 'application/xhtml+xml'
         assert item.dest_path not in self.html_items
         self.html_items[item.dest_path] = item
+        return item
+
+    def add_font(self, src_path, dest_path):
+        if dest_path in self.font_items:
+            return
+        item = EpubItem()
+        item.id = 'font_%d' % (len(self.font_items) + 1)
+        item.src_path = src_path
+        item.dest_path = dest_path
+        if src_path.endswith('otf'):
+            item.mime_type = 'application/opentype'
+        elif src_path.endswith('ttf'):
+            item.mime_type = 'application/truetype'
+        else:
+            raise KeyError
+        #assert item.dest_path not in self.font_items
+        self.font_items[item.dest_path] = item
         return item
 
     def add_css(self, src_path, dest_path):
@@ -237,7 +256,7 @@ class EpubBook:
         return sorted(self.guide.values(), key = lambda x : x[2])
 
     def add_guide_item(self, href, title, type):
-        assert type not in self.guide
+        assert type not in self.guide, "TYPE %s NOT IN GUIDE %s"%(type, self.guide)
         self.guide[type] = (href, title, type)
 
     def get_toc_map_root(self):
@@ -304,7 +323,8 @@ class EpubBook:
                 #fout.write(item.html)
                 fout.close()
             else:
-                shutil.copyfile(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))
+                #shutil.copyfile(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))
+                put_file(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))
 
 
     def _write_mime_type(self):
@@ -351,6 +371,20 @@ class EpubBook:
         self._write_content_opf()
         self._write_toc_ncx()
 
+
+def put_file(abs_path, rel_path):
+    """
+    given a file put it in the rel_path creating necessary dirs
+    """
+    parents = os.path.dirname(rel_path)
+    try:
+        os.makedirs(parents)
+
+    except OSError, e:
+        import errno
+        if e.errno != errno.EEXIST or not os.path.isdir(parents):
+            raise
+    shutil.copyfile(abs_path, rel_path)
 
 def test():
     def get_minimal_html(text):
