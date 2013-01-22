@@ -94,6 +94,7 @@ class EpubBook:
         self.image_items = {}
         self.html_items = {}
         self.css_items = {}
+        self.js_items = {}
         self.font_items = {}
 
 
@@ -140,8 +141,11 @@ class EpubBook:
     def get_css_items(self):
         return sorted(self.css_items.values(), key = lambda x : x.id)
 
+    def get_js_items(self):
+        return sorted(self.js_items.values(), key = lambda x : x.id)
+
     def get_all_items(self):
-        return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values(), self.font_items.values()), key = lambda x : x.id)
+        return sorted(itertools.chain(self.image_items.values(), self.html_items.values(), self.css_items.values(), self.js_items.values(), self.font_items.values()), key = lambda x : x.id)
 
     def add_image(self, src_path, dest_path, id=None):
         if dest_path in self.image_items:
@@ -182,6 +186,18 @@ class EpubBook:
             raise KeyError
         #assert item.dest_path not in self.font_items
         self.font_items[item.dest_path] = item
+        return item
+
+    def add_js(self, src_path, dest_path):
+        if dest_path in self.js_items:
+            return
+        item = EpubItem()
+        item.id = 'js_%d' % (len(self.css_items) + 1)
+        item.src_path = src_path
+        item.dest_path = dest_path
+        item.mime_type = 'text/javascript'
+        #assert item.dest_path not in self.css_items
+        self.js_items[item.dest_path] = item
         return item
 
     def add_css(self, src_path, dest_path):

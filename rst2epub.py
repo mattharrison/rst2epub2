@@ -76,6 +76,7 @@ def cwd_cm():
     yield
     os.chdir(cur_dir)
 
+
 def cwd_decorator(func):
     """
     decorator to change cwd to directory containing rst for this function
@@ -96,6 +97,7 @@ def cwd_decorator(func):
         return data
     return wrapper
 
+
 class EpubWriter(html4css1.Writer):
     def __init__(self):
         html4css1.Writer.__init__(self)
@@ -108,6 +110,7 @@ class EpubWriter(html4css1.Writer):
             setattr(self, attr, getattr(visitor, attr))
         self.output = self.visitor.get_output()
 
+
 class HTMLTranslator(html4css1.HTMLTranslator):
     def __init__(self, document):
         html4css1.HTMLTranslator.__init__(self, document)
@@ -118,7 +121,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.authors = []
         self.cover_image = None
         self._ignore_image = False
-        self.images = {} #absolute path to book path
+        self.images = {}  # absolute path to book path
         self.first_page = True
         self.field_name = None
         self.fields = {}
@@ -126,6 +129,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.is_title_page = False
         self.first_paragraph = True
         self.css = ['main.css']
+        self.js = []
         self.font = []  # user embedded font paths
         self.toc_parents = []
         self.toc_page = False
@@ -133,15 +137,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.parent_level = 0
         self.guide_type=None
 
-
-
     def dispatch_visit(self, node):
         # mark body length before visiting node
         self.body_len_before_node[node.__class__.__name__] = len(self.body)
         # keep track of parents
         count = self.in_node.setdefault(node.tagname, 0)
         self.in_node[node.tagname] += 1
-        #print "NAME", node.tagname, node.__class__.__name__
         html4css1.HTMLTranslator.dispatch_visit(self, node)
 
     def dispatch_departure(self, node):
@@ -170,9 +171,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.depart_literal(node)
 
     def visit_paragraph(self, node):
-        if self.should_be_compact_paragraph(node):
-            self.context.append('')
-        elif self.first_paragraph and not self.at('admonition'):
+        # All text need p's (else breaks epubcheck)
+        if self.first_paragraph and not self.at('admonition'):
             if self.section_level == 1:
                 self.body.append(self.starttag(node, 'p', '', **{'class':'first-para-chapter'}))
             else:
@@ -185,13 +185,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             else:
                 self.body.append(self.starttag(node, 'p', '', **{'class':'note-p'}))
             self.context.append('</p>\n')
+        elif self.at('block_quote'):
+            self.body.append(self.starttag(node, 'p', '', **{}))
+            self.context.append('</p>\n')
 
         else:
-             #if 1:
             html4css1.HTMLTranslator.visit_paragraph(self, node)
         self.first_paragraph = False
-    # def depart_paragraph(self, node):
-    #     if self.first_paragraph:
 
     def append_class_on_child(self, node, class_, index=0):
         children = [n for n in node if not isinstance(n, nodes.Invisible)]
@@ -206,13 +206,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     def set_first_last(self, node):
         # mobi doesn't like multiple classes per tag
         self.append_class_on_child(node, '-first', 0)
-        #self.append_class_on_child(node, '-last', -1)
-
-    # def visit_admonition(self, node):
-    #     # mobi don't like those divs, messes up formatting on subsequent elements
-    #     pass
-    # def depart_admonition(self, node):
-    #     pass
 
     def visit_literal_block(self, node):
         # mobi needs an extra div here, otherwise headings following <pre> are indented poorly
@@ -222,13 +215,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         else:
             self.body.append(self.starttag(node, 'div'))
             self.body.append(self.starttag(node, 'pre', CLASS='literal-block'))
-        #html4css1.HTMLTranslator.visit_literal_block(self, node)
 
     def depart_literal_block(self, node):
         html4css1.HTMLTranslator.depart_literal_block(self, node)
         self.body.append('</div>\n')
-
-
 
     def visit_meta(self, node):
         # support gutenberg extensions
@@ -241,8 +231,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 cover_page = node.get('content')
                 self.cover_image = os.path.abspath(cover_page)
 
-
-
     @cwd_decorator
     def visit_Text(self, node):
         if "Copyright" in str(node):
@@ -252,10 +240,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             self.field_name = node.astext()
         elif self.at('field_body'):
             pass
-            # if self.field_name is None:
-            #     import pdb; pdb.set_trace()
-            # self.fields[self.field_name] = node.astext()
-            # self.field_name = None
         elif self.at('generated'):#  and 'sectnum' in node.get('classes'):
             # avoid <generated classes="sectnum">5.1</generated>
             pass
@@ -276,24 +260,23 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             elif txt.startswith('css:'):
                 paths = txt.split(':')[-1].split(',')
                 self.css = self.css + [os.path.abspath(path) for path in paths if path]
+            elif txt.startswith('js:'):
+                paths = txt.split(':')[-1].split(',')
+                self.js = self.js + [os.path.abspath(path) for path in paths if path]
             elif txt.startswith('font:'):
                 paths = txt.split(':')[-1].split(',')
                 self.font = self.font + [os.path.abspath(path) for path in paths if path]
             elif txt == 'nocss':
                 self.css = None
             elif txt.startswith('addimg:'):
-                #self.images.append(os.path.abspath(txt.split(':')[-1]))
                 uri = txt.split(':')[-1]
                 self.images[os.path.abspath(uri)] = uri
             elif txt.startswith('toc:show'):
                 # old school hack now overriding .. contents::
                 # see visit_epubcontent
-
                 if self.body:
                     self.create_chapter()
                 self.book.add_toc_page(order=self.book.next_order())
-                # self.toc_page = True
-                # self.create_chapter()
             elif txt.startswith('toc:parent1'):
                 self.is_parent = True
                 self.parent_level = 1
@@ -304,7 +287,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             elif txt.startswith('toc:clear'):
                 self.is_parent = False
                 self.toc_parents = []
-
         else:
             html4css1.HTMLTranslator.visit_Text(self, node)
 
@@ -314,11 +296,9 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             # create an existing chapter
             self.create_chapter()
         self.toc_page = True
-        # self.create_chapter()
 
     def depart_epubcontent(self, node):
         self.section_level = 0
-        #self.create_chapter()
 
     @cwd_decorator
     def visit_image(self, node):
@@ -329,7 +309,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             self._ignore_image = True
         else:
             source = node.get('uri')
-            #self.images.append(os.path.abspath(source))
             self.images[os.path.abspath(source)] = source
         if not self._ignore_image:
             # appease epubcheck
@@ -394,9 +373,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             return html4css1.HTMLTranslator.depart_field_name(self, node)
 
     def visit_title(self, node):
-        # if self.body:
-        #     # if newpage directive
-        #     self.create_chapter()
         print "TITLE", self.section_level, node
         html4css1.HTMLTranslator.visit_title(self, node)
 
@@ -409,7 +385,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 print "DEPART TITLE", self.section_title, node#,  self.body
         html4css1.HTMLTranslator.depart_title(self, node)
 
-
     def depart_author(self, node):
         start = self.body_len_before_node[node.__class__.__name__]
         self.authors.append(node.children[0])
@@ -419,18 +394,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.reset_chapter()
 
     def visit_section(self, node):
-        print "VSEC",  self.section_level,  str(node)[:10]
         # too many divs is bad for mobi...
-        #html4css1.HTMLTranslator.visit_section(self, node)
-        if node.get('class'):
-            import pdb;pdb.set_trace()
-
         if self.section_level == 0:
             if self.body:
                 self.create_chapter()
             else:
                 self.reset_chapter()
-        print self.section_level, str(node)[:20]
         self.section_level += 1
         self.first_paragraph = True
 
@@ -438,8 +407,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.first_page = False
         if self.section_level >= 1:
             self.section_level -= 1
-        #html4css1.HTMLTranslator.depart_section(self, node)
-        print "DEPSEC", self.section_level,  str(node)[:50], self.guide_type
         if self.section_level == 0:
             self.create_chapter()
 
@@ -449,7 +416,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     #depart_generated = depart_section
 
     def create_chapter(self):
-        print "CC", self.toc_page
         self.sections.append(self.body)
         self.body = []
         body = ''.join(self.sections[-1])
@@ -473,24 +439,32 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                     self.book.add_font(item, os.path.basename(item))
                 else:
                     raise KeyError
+        js = ''
+        if self.js:
+
+            js = ''.join(['<script src="{0}" type="text/javascript"></script>'.format(os.path.basename(item)) for item in self.js])
+            for item in self.js:
+                if os.path.exists(item):
+                    self.book.add_js(item, os.path.basename(item))
+                else:
+                    raise KeyError
         title = ''
-        if 'title' in self.fields:
+        if 'title' in self.fields and self.is_title_page:
             title = self.fields['title']
         elif self.section_title:
             title=striptags(self.section_title)
 
+        header = css+js
         html = XHTML_WRAPPER.format(body=body,
                                     title=title,
-                                    css=css)
+                                    header=header)
         if self.is_title_page:
-            print "ADDING TITLE", self.title
             self.book.add_title_page(html)
             # clear out toc_map_node
             self.book.last_node_at_depth = {0:self.book.toc_map_root}
 
             self.is_title_page = False
         elif self.toc_page:
-            import pdb; pdb.set_trace()
             self.book.add_toc_page(order=self.book.next_order())
             self.toc_page = False
         else:
@@ -510,10 +484,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def reset_chapter(self):
         self.section_title = ''
-        #self.in_node = {}
         self.first_paragraph = True
         self.css = ['main.css']
         self.font = []
+        self.js = []
         self.parent_level = 0
         self.section_level = 0
         self.guide_type = None
@@ -537,29 +511,17 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     def get_output(self):
         root_dir = '/tmp/epub'
         for k,v in self.fields.items():
-            print "K", k, 'V', v
             if k == 'creator':
                 self.book.add_creator(v)
             elif k.lower() == 'title':
                 self.book.set_title(v)
             else:
                 self.book.add_meta(k, v)
-        # self.book.add_css(os.path.join(
-        #     os.path.dirname(epub.__file__), 'templates',
-        #     'main.css'), 'main.css')
-        #self.book.set_title(''.join(self.title))
-
         self.book.add_creator(', '.join(self.authors))
-        # add a rst comment .. titlepage to denote title page
-        #self.book.add_title_page()
-        #self.book.add_toc_page(order=self.toc_loc)
         if self.cover_image:
             self.book.add_cover(self.cover_image, title=''.join(self.title))
-        #for i, img_path in enumerate(self.images):
         for i, img_paths in enumerate(self.images.items()):
             abs_path, dst_path = img_paths
-            #parents, name = os.path.split(img_path)
-            #self.book.add_image(img_path, name, id='image_{0}'.format(i))
             self.book.add_image(abs_path, dst_path, id='image_{0}'.format(i))
         self.book.create_book(root_dir)
         self.book.create_archive(root_dir, root_dir + '.epub')
@@ -572,7 +534,7 @@ XHTML_WRAPPER = u'''<?xml version="1.0" encoding="UTF-8"?>
 <head>
 <title>{title}</title>
 <meta http-equiv="Content-type" content="application/xhtml+xml;charset=utf8" />
-{css}
+{header}
 </head>
 <body>
 {body}
@@ -604,7 +566,6 @@ class epubcontent(nodes.Element):
     tagname = 'epubcontent'
 
 
-
 class Index(Directive):
     """
     Directive to add entries to the index.
@@ -620,7 +581,6 @@ class Index(Directive):
         return [] #None #ignore for now
         # see sphinx.directives.other.Index for hints
         arguments = self.arguments[0].split('\n')
-        #env = self.state.document.settings.env
         targetid = 'index-%s' % Index.count
         Index.count += 1
         targetnode = nodes.target('', '', ids=[targetid])

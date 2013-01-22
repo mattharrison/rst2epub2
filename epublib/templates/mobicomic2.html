@@ -134,8 +134,7 @@ p.textzoom {
       var parents = $('.target-mag-parent');
       var parent;
 
-      $('a.next').click(function(event) {
-        event.preventDefault();
+      next = function() {
         if (parent) {
           // hide
           $(parent).css('display', 'none');
@@ -144,10 +143,9 @@ p.textzoom {
         parent_idx += 1;
         // show
           $(parent).css('display', 'block');
-      });
+      };
 
-      $('a.prev').click(function(event) {
-        event.preventDefault();
+      prev = function() {
         if (parent) {
           // hide
           $(parent).css('display', 'none');
@@ -156,9 +154,30 @@ p.textzoom {
         parent = parents[parent_idx];
         // show
         $(parent).css('display', 'block');
-      });
-    }
+      };
 
+      $('a.next').click(function(event) {
+        event.preventDefault();
+        next();
+      });
+
+      $('a.prev').click(function(event) {
+        event.preventDefault();
+        prev();
+      });
+
+    $("body").keypress(function(event) {
+      if ( event.which == 110 ) { // 'n'
+        event.preventDefault();
+        next();
+      }
+      if ( event.which == 112 ) { // 'p'
+        event.preventDefault();
+        prev();
+      }
+    });
+
+   }
     $(document).ready(run_magnify);
   </script>
 </py:if>
@@ -176,7 +195,9 @@ p.textzoom {
       <div id="${mag.target_id}">
         <py:choose>
           <py:when test="mag.txt">
-            TEXT!
+            <a class="app-amzn-magnify" data-app-amzn-magnify="${mag.json_junk()}" >
+              ${mag.txt}
+            </a>
           </py:when>
           <py:otherwise>
             <!--<a class="app-amzn-magnify" data-app-amzn-magnify="{'targetId':'${mag.target_id_parent}', 'ordinal':${mag.ordinal}}" fail="true"> -->

@@ -80,7 +80,6 @@ class Mag(object):
         self.target_id = target_id
 
         # coordinates for click target
-
         self.top = top
         self.left = left
         self.height = height
@@ -147,7 +146,9 @@ class Page(object):
     def auto_target(self,
                     whole_target_left, whole_target_top, whole_target_width, whole_target_height,
                     zoom_factor=2, overlap_percent=10, direction=LEFT,
-                    post_data=None):
+                    post_data=None,
+                    txt=None):
+        start_left = whole_target_left
         # target is all in percent
         print "ZF", zoom_factor
         if direction == LEFT:
@@ -166,6 +167,10 @@ class Page(object):
                     #target_width = right_side - target_left
                     target_left = 100 - target_width
                     zoom_left = 100 - target_width
+                elif right_side > start_left + whole_target_width:
+                    print "OFF RIGHT",
+                    target_left = whole_target_left + whole_target_width - target_width
+                    zoom_left = whole_target_left + whole_target_width - target_width
                     #target_width = whole_target_width # - target_left
                 print "LEFT", target_left
                 print "RIGHT SIDE", right_side, "TW", target_width
@@ -181,12 +186,12 @@ class Page(object):
                     target_left, whole_target_top, target_width, whole_target_height,
                     lb_left, 50. - whole_target_height*zoom_factor/2., lb_width, whole_target_height*zoom_factor,
                     -zoom_left, 0 - 100*(whole_target_top/float(whole_target_height)/zoom_factor),
-                    post_data=post_data)
+                    txt=txt,post_data=post_data)
                 #zoom_left, -whole_target_top*zoom_factor)
 
                 zoom_left += target_width
                 target_left += whole_target_width/float(chunks)
-
+                #target_left += (whole_target_width - target_width)/float(chunks)
 
     def add_zoom_image(self, zoom_factor,
                        target_left, target_top, target_width, target_height,
