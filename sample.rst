@@ -22,6 +22,14 @@ Example ``rst2epub2.py`` Book
 
 .. The above comment indicates that this will be a titlepage
 
+.. You can include HTML if you want
+
+.. raw:: html
+
+  <div class="Title">
+  <h1 class="center">Example rst2epub2.py Book</h1>
+  </div>
+
 Matt Harrison
 
 Copyright 2011
