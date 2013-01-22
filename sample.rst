@@ -11,16 +11,12 @@ Example ``rst2epub2.py`` Book
 
 :creator: Matt Harrison
 :publisher: Matt Harrison
-:title: Example ``rst2epub2.py`` Book
+:title: Example rst2epub2.py Book
 :description: Example of using rst for your book
 :language: English
 :subject: reStructuredText for ebooks
 :rights: Copyright 2011 -- Matthew Harrison -- All rights reserved
 
-
-
-Example ``rst2epub2.py`` Book
-====================================
 
 .. titlepage
 
