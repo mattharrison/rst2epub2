@@ -93,6 +93,8 @@ h1 + p, h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {
   text-indent: 0; }
 
 p {
+  /* paperwhite defaults to sans */
+  font-family: "Palatino", "Times New Roman", Caecilia, serif;
   -webkit-hyphens: auto;
   -moz-hyphens: auto;
   hyphens: auto;
@@ -420,6 +422,38 @@ table.footnote {
 .per5 {
   font-size: 200%; }
 
+.mousepoem p {
+  line-height: 0;
+  margin-left: 1em; }
+
+.per100 {
+  font-size: 100%;
+  line-height: 0.9em; }
+
+.per90 {
+  font-size: 90%;
+  line-height: 0.9em; }
+
+.per80 {
+  font-size: 80%;
+  line-height: 0.9em; }
+
+.per70 {
+  font-size: 70%;
+  line-height: 0.9em; }
+
+.per60 {
+  font-size: 60%;
+  line-height: 0.9em; }
+
+.per50 {
+  font-size: 50%;
+  line-height: 1.05em; }
+
+.per40 {
+  font-size: 40%;
+  line-height: 0.9em; }
+
 .size1 {
   font-size: x-small; }
 
@@ -493,6 +527,16 @@ tt, pre, .mono {
 
 .modata {
   font-family: "mgopen modata"; }
+
+@font-face {
+  font-family: hidden;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 1em;
+  src: url("invisible1.ttf"); }
+
+.hidden-font {
+  font-family: "hidden"; }
 
 /* Nook works to here :) */
 /* media queries at bottom to not confuse other platforms */
