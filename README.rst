@@ -12,8 +12,9 @@ Install
 
 run::
 
-  make deps
-  env/bin/python setup.py install
+  make develop
+
+The ``rst2epb.py`` binary will be located in the ``env/bin/`` directory.
 
 Known to work on linux systems. (Should work on apple, cygwin, MS with some futzing).
 
