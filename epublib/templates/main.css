@@ -53,6 +53,7 @@ div.cover {
   padding: 0px;
   margin: 0px; }
 
+/* font plan- serif text, sans headers */
 h1, h2, h3, h4, h5, h6 {
   hyphens: none !important;
   -moz-hyphens: none !important;
@@ -61,7 +62,8 @@ h1, h2, h3, h4, h5, h6 {
   page-break-after: avoid;
   page-break-inside: avoid;
   text-indent: 0px;
-  text-align: left; }
+  text-align: left;
+  font-family: Helvetica, Arial, san-serif; }
 
 h1 {
   font-size: 1.6em;
@@ -80,13 +82,13 @@ h3 {
   font-size: 0.625em; }
 
 h4 {
-  font-size: 0.39063em; }
+  font-size: 0.391em; }
 
 h5 {
-  font-size: 0.24414em; }
+  font-size: 0.244em; }
 
 h6 {
-  font-size: 0.15259em; }
+  font-size: 0.153em; }
 
 /* Do not indent first paragraph. Mobi will need class='first-para' */
 h1 + p, h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {
@@ -150,6 +152,7 @@ ul, ol, dl {
   text-align: left; }
 
 li {
+  font-family: "Palatino", "Times New Roman", Caecilia, serif;
   line-height: 1.5em;
   orphans: 2;
   widows: 2;
@@ -161,11 +164,14 @@ li {
     text-indent: 0em; }
 
 dt {
-  font-weight: bold; }
+  font-weight: bold;
+  font-family: Helvetica, Arial, san-serif; }
 
-dd p {
-  /* Fix paragraph indenting inside of definition lists */
-  text-indent: 0em; }
+dd {
+  font-family: "Palatino", "Times New Roman", Caecilia, serif; }
+  dd p {
+    /* Fix paragraph indenting inside of definition lists */
+    text-indent: 0em; }
 
 blockquote {
   margin-left: 1em;
@@ -277,6 +283,7 @@ th {
   border-bottom: 1px solid black; }
 
 td {
+  font-family: "Palatino", "Times New Roman", Caecilia, serif;
   font-size: small;
   hyphens: none;
   -moz-hyphens: none;
@@ -342,9 +349,11 @@ table.footnote {
 .copyright-top {
   margin-top: 6em; }
 
-/* Samples */
-.ingredient {
-  page-break-inside: avoid; }
+.page-break-before {
+  page-break-before: always; }
+
+.page-break-after {
+  page-break-after: always; }
 
 .center {
   text-indent: 0;
@@ -365,6 +374,10 @@ table.footnote {
 .f-left {
   float: left; }
 
+/* Samples */
+.ingredient {
+  page-break-inside: avoid; }
+
 .box-example {
   background-color: #8ae234;
   margin: 2em;
@@ -382,12 +395,6 @@ table.footnote {
 
 .margin-only {
   margin: 2em; }
-
-.page-break-before {
-  page-break-before: always; }
-
-.page-break-after {
-  page-break-after: always; }
 
 .smaller {
   font-size: 0.8em; }

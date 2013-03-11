@@ -12,17 +12,19 @@ env:
 deps: env
 	$(PIP) install -r requirements.txt
 
-.PHONY: develop
-develop: deps
-	$(PY) setup.py develop
-
 # rm_env isn't a file so it needs to be marked as "phony"
 .PHONY: rm_env
 rm_env:
 	rm -rf env
 
-# --------- Testing ----------
 
+# --------- Dev --------------------
+.PHONY: dev
+dev: deps
+	$(PY) setup.py develop
+
+
+# --------- Testing ----------
 .PHONY: test
 test: nose deps
 	$(NOSE) test
@@ -32,12 +34,16 @@ nose: $(NOSE)
 $(NOSE): env
 	$(PIP) install nose
 
-# --------- PyPi ----------
 
+# --------- PyPi ----------
 .PHONY: build
-build:
+build: env
 	$(PY) setup.py sdist
 
 .PHONY: upload
-upload:
-	$(PY) setup.py sdist upload
+upload: env
+	$(PY) setup.py sdist register upload
+
+.PHONY: clean
+clean:
+	rm -rf dist *.egg-info

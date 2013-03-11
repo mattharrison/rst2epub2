@@ -10,4 +10,5 @@ setup(name="rst2epub2",
       scripts=["rst2epub.py"],
       package_dir={"epublib":"epublib"},
       packages=['epublib'],
+      package_data={'epublib':['templates/*.css','templates/*.html','templates/*.ncx','templates/*.xml']},
 )
