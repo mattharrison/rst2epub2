@@ -39,6 +39,7 @@ from genshi.template import TemplateLoader
 try:
     from lxml import etree
 except ImportError as e:
+    # no xpath support!
     import xml.etree.ElementTree as etree
 
 
@@ -351,7 +352,8 @@ class EpubBook:
     @staticmethod
     def _list_manifest_items(content_opf_path):
         tree = etree.parse(content_opf_path)
-        return tree.xpath("//opf:manifest/opf:item/@href", namespaces = {'opf': 'http://www.idpf.org/2007/opf'})
+        #return tree.xpath("//opf:manifest/opf:item/@href", namespaces = {'opf': 'http://www.idpf.org/2007/opf'})
+        return [foo.attrib['href'] for foo in tree.findall('{http://www.idpf.org/2007/opf}manifest/{http://www.idpf.org/2007/opf}item')]
 
     @staticmethod
     def create_archive(root_dir, output_path):

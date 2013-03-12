@@ -627,6 +627,7 @@ roles.register_local_role('envvar', ignore_role)
 #roles.register_local_role('envvar', envvar)
 
 def main(args):
+    print "ARGS", args
     argv = None
     reader = standalone.Reader()
     reader_name = 'standalone'

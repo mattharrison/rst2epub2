@@ -1,0 +1,12 @@
+\#*
+\.#*
+dist
+env
+*.pyc
+*.egg-info
+.coverage
+build
+html-cov
+test
+test-env
+packages

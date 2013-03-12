@@ -1,1 +1,6 @@
-README.rst
+include README.rst
+recursive-include epublib *.xml
+recursive-include epublib *.css
+recursive-include epublib *.ncx
+recursive-include epublib *.html
+recursive-include epublib *.opf
