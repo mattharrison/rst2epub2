@@ -307,7 +307,7 @@ class EpubBook:
             pass
 
     def _write_container_xml(self):
-        fout = open(os.path.join(self.root_dir, 'META-INF', 'container.xml'), 'w')
+        fout = open(os.path.join(self.root_dir, 'META-INF', 'container.xml'), 'wb')
         tmpl = self.loader.load('container.xml')
         stream = tmpl.generate()
         fout.write(stream.render('xml').encode('utf-8'))
@@ -315,14 +315,14 @@ class EpubBook:
 
     def _write_toc_ncx(self):
         self.toc_map_root.assign_play_order()
-        fout = open(os.path.join(self.root_dir, 'OEBPS', 'toc.ncx'), 'w')
+        fout = open(os.path.join(self.root_dir, 'OEBPS', 'toc.ncx'), 'wb')
         tmpl = self.loader.load('toc.ncx')
         stream = tmpl.generate(book=self)
         fout.write(stream.render('xml').encode('utf-8'))
         fout.close()
 
     def _write_content_opf(self):
-        fout = open(os.path.join(self.root_dir, 'OEBPS', 'content.opf'), 'w')
+        fout = open(os.path.join(self.root_dir, 'OEBPS', 'content.opf'), 'wb')
         tmpl = self.loader.load('content.opf')
         stream = tmpl.generate(book=self)
         fout.write(stream.render('xml').encode('utf-8'))
@@ -331,7 +331,7 @@ class EpubBook:
     def _write_items(self):
         for item in self.get_all_items():
             if item.html:
-                fout = open(os.path.join(self.root_dir, 'OEBPS', item.dest_path), 'w')
+                fout = open(os.path.join(self.root_dir, 'OEBPS', item.dest_path), 'wb')
                 if isinstance(item.html, str):
                     fout.write(item.html)
                 else:
@@ -345,7 +345,7 @@ class EpubBook:
 
 
     def _write_mime_type(self):
-        fout = open(os.path.join(self.root_dir, 'mimetype'), 'w')
+        fout = open(os.path.join(self.root_dir, 'mimetype'), 'wb')
         fout.write('application/epub+zip')
         fout.close()
 

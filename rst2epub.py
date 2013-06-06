@@ -42,7 +42,7 @@ TODO:
 from contextlib import contextmanager
 import os
 import sys
-
+import tempfile
 
 from genshi.util import striptags
 import docutils
@@ -234,7 +234,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     @cwd_decorator
     def visit_Text(self, node):
         if "Copyright" in str(node):
-            print self.body
+            pass
         txt = node.astext()
         if self.at('field_name'):
             self.field_name = node.astext()
@@ -292,7 +292,6 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def visit_epubcontent(self, node):
         if self.body:
-            print "CREATING BEFORE"
             # create an existing chapter
             self.create_chapter()
         self.toc_page = True
@@ -373,16 +372,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             return html4css1.HTMLTranslator.depart_field_name(self, node)
 
     def visit_title(self, node):
-        print "TITLE", self.section_level, node
         html4css1.HTMLTranslator.visit_title(self, node)
 
     def depart_title(self, node):
-        print "DEPTIT", self.section_level,  node
         if self.section_level == 1:
             if self.section_title == '':
                 start = self.body_len_before_node[node.__class__.__name__]
                 self.section_title = ''.join(self.body[start + 1:])
-                print "DEPART TITLE", self.section_title, node#,  self.body
         html4css1.HTMLTranslator.depart_title(self, node)
 
     def depart_author(self, node):
@@ -411,7 +407,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             self.create_chapter()
 
     def visit_generated(self, node):
-        print "GEN", node
+        pass
 
     #depart_generated = depart_section
 
@@ -509,7 +505,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     depart_thead=depart_tbody
 
     def get_output(self):
-        root_dir = '/tmp/epub'
+        root_dir = os.path.join(tempfile.gettempdir(), 'epub')
         for k,v in self.fields.items():
             if k == 'creator':
                 self.book.add_creator(v)
@@ -627,7 +623,6 @@ roles.register_local_role('envvar', ignore_role)
 #roles.register_local_role('envvar', envvar)
 
 def main(args):
-    print "ARGS", args
     argv = None
     reader = standalone.Reader()
     reader_name = 'standalone'

@@ -6,6 +6,7 @@ TEST-BIN := test-env/bin/
 NOSE := $(TEST-BIN)/nosetests
 COV := $(TEST-BIN)/coverage
 TEST-PIP := $(TEST-BIN)/pip
+TEST-PY := $(TEST-BIN)/python
 
 # -------- Environment --------
 # env is a folder so no phony is necessary
@@ -52,10 +53,9 @@ test-env:
 
 .PHONY: test
 test: test-env deps testdeps build
-	$(TEST-PIP) install dist/rst2epub*; $(NOSE); $(COV) run $(TEST-BIN)/rst2epub.py sample/sample.rst /tmp/sample.epub; $(COV) html -d html-cov
-
-
-
+	#$(TEST-PIP) uninstall --force rst2epub2; $(TEST-PIP) install dist/rst2epub*;\
+	$(TEST-PY) setup.py develop;\
+	$(NOSE); $(COV) run $(TEST-BIN)/rst2epub.py --traceback -r 3 sample/sample.rst /tmp/sample.epub; $(COV) html -d html-cov
 # --------- PyPi ----------
 .PHONY: build
 build: env
