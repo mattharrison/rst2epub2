@@ -310,7 +310,7 @@ class EpubBook:
         fout = open(os.path.join(self.root_dir, 'META-INF', 'container.xml'), 'wb')
         tmpl = self.loader.load('container.xml')
         stream = tmpl.generate()
-        fout.write(stream.render('xml').encode('utf-8'))
+        fout.write(stream.render('xml'))
         fout.close()
 
     def _write_toc_ncx(self):
@@ -318,14 +318,15 @@ class EpubBook:
         fout = open(os.path.join(self.root_dir, 'OEBPS', 'toc.ncx'), 'wb')
         tmpl = self.loader.load('toc.ncx')
         stream = tmpl.generate(book=self)
-        fout.write(stream.render('xml').encode('utf-8'))
+        fout.write(stream.render('xml'))
         fout.close()
 
     def _write_content_opf(self):
         fout = open(os.path.join(self.root_dir, 'OEBPS', 'content.opf'), 'wb')
         tmpl = self.loader.load('content.opf')
         stream = tmpl.generate(book=self)
-        fout.write(stream.render('xml').encode('utf-8'))
+        data = stream.render('xml')
+        fout.write(data)
         fout.close()
 
     def _write_items(self):
@@ -336,11 +337,8 @@ class EpubBook:
                     fout.write(item.html)
                 else:
                     fout.write(item.html.encode('utf-8'))
-                #fout.write(item.html.decode('utf-8'))
-                #fout.write(item.html)
                 fout.close()
             else:
-                #shutil.copyfile(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))
                 put_file(item.src_path, os.path.join(self.root_dir, 'OEBPS', item.dest_path))
 
 

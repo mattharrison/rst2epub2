@@ -84,6 +84,24 @@ Here is a side bar
 
   Pretty nice!
 
+Unicode Support - 壁迷リ
+=========================
+
+Hindi
+--------
+
+वेबजाल अंग्रेजी
+
+Spanish Latin
+---------------
+
+soleat copiósae ñec
+
+Japanese
+------------
+
+員カイ壁迷リ
+
 Creating an epub
 ================
 

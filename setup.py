@@ -10,7 +10,7 @@ except IOError as e:
     readme = ''
 
 setup(name="rst2epub2",
-      version='0.3',
+      version='0.3.1',
       author='matt harrison',
       author_email='matthewharrison AT gmail',
       description="script/library to create epubs programatically and from rst",
