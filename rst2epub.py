@@ -170,7 +170,22 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     def depart_envvar(self, node):
         self.depart_literal(node)
 
+    def visit_literal(self, node):
+        if self.at('index'):
+            return
+        else:
+            html4css1.HTMLTranslator.visit_literal(self, node)
+
+    def depart_literal(self, node):
+        if self.at('index'):
+            return
+        else:
+            html4css1.HTMLTranslator.depart_literal(self, node)
+
+
     def visit_paragraph(self, node):
+        if self.at('index'):
+            return
         # All text need p's (else breaks epubcheck)
         if self.first_paragraph and not self.at('admonition'):
             if self.section_level == 1:
@@ -192,6 +207,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         else:
             html4css1.HTMLTranslator.visit_paragraph(self, node)
         self.first_paragraph = False
+
+    def depart_paragraph(self, node):
+        if self.at('index'):
+            return
+        else:
+            html4css1.HTMLTranslator.depart_paragraph(self, node)
 
     def append_class_on_child(self, node, class_, index=0):
         children = [n for n in node if not isinstance(n, nodes.Invisible)]
@@ -236,6 +257,10 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         if "Copyright" in str(node):
             pass
         txt = node.astext()
+        if self.at('index'):
+            print "INDEX NODE", node.parent
+            # no support in epub :(
+            return
         if self.at('field_name'):
             self.field_name = node.astext()
         elif self.at('field_body'):
@@ -411,6 +436,12 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     #depart_generated = depart_section
 
+    def visit_index(self, node):
+        pass
+
+    def depart_index(self, node):
+        pass
+
     def create_chapter(self):
         self.sections.append(self.body)
         self.body = []
@@ -561,8 +592,95 @@ class epubcontent(nodes.Element):
     # change normal TOC to epubcontent
     tagname = 'epubcontent'
 
-
 class Index(Directive):
+    """
+    Directive to add entries to the index.
+    """
+    #has_content = False
+    has_content = True
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+    option_spec = {}
+    count = 0
+
+    def run(self):
+        text = ''.join(self.content)
+        # Create the admonition node, to be populated by `nested_parse`.
+        index_node = index(rawsource=text)
+        # Parse the directive contents.
+        self.state.nested_parse(self.content, self.content_offset,
+            index_node)
+        targetid = 'index-%s' % Index.count
+        Index.count += 1
+        target_node = nodes.target('', '', ids=[targetid])
+        index_node['entries'] = ne = []
+        index_node['inline'] = False
+        if self.arguments:
+            arguments = self.arguments[0].split('\n')
+            for entry in arguments:
+                ne.extend(process_index_entry(entry, targetid))
+        return [index_node, target_node]
+
+
+indextypes = [
+    'single', 'pair', 'double', 'triple', 'see', 'seealso',
+]
+
+def process_index_entry(entry, targetid):
+    indexentries = []
+    entry = entry.strip()
+    oentry = entry
+    main = ''
+    if entry.startswith('!'):
+        main = 'main'
+        entry = entry[1:].lstrip()
+    for type in pairindextypes:
+        if entry.startswith(type+':'):
+            value = entry[len(type)+1:].strip()
+            value = pairindextypes[type] + '; ' + value
+            indexentries.append(('pair', value, targetid, main))
+            break
+    else:
+        for type in indextypes:
+            if entry.startswith(type+':'):
+                value = entry[len(type)+1:].strip()
+                if type == 'double':
+                    type = 'pair'
+                indexentries.append((type, value, targetid, main))
+                break
+        # shorthand notation for single entries
+        else:
+            for value in oentry.split(','):
+                value = value.strip()
+                main = ''
+                if value.startswith('!'):
+                    main = 'main'
+                    value = value[1:].lstrip()
+                if not value:
+                    continue
+                indexentries.append(('single', value, targetid, main))
+    return indexentries
+pairindextypes = {
+    'module':    ('module'),
+    'keyword':   ('keyword'),
+    'operator':  ('operator'),
+    'object':    ('object'),
+    'exception': ('exception'),
+    'statement': ('statement'),
+    'builtin':   ('built-in function'),
+}
+class index(nodes.Invisible, nodes.Inline, nodes.TextElement):
+    """Node for index entries.
+
+    This node is created by the ``index`` directive and has one attribute,
+    ``entries``.  Its value is a list of 4-tuples of ``(entrytype, entryname,
+    target, ignored)``.
+
+    *entrytype* is one of "single", "pair", "double", "triple".
+    """
+
+class IndexOld(Directive):
     """
     Directive to add entries to the index.
     """
