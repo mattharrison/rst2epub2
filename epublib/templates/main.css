@@ -111,7 +111,16 @@ p {
   text-align: justify;
   text-indent: 1em;
   orphans: 2;
-  widows: 2; }
+  widows: 2;
+  /* # optimize reading */
+  /* font-size:18px; */
+  /*   line-height:24px; */
+  /*   text-align: justify; */
+  /*   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAbCAYAAAC5rTVJAAAA3ElEQVQY0wXBwU3CABQA0Oe3IVgarFpDwYNH41GvLuMYzuQ4boBKiqGBptbCoQHf8+b19C4/vb44RWElmTdWEyJXaUuqMZFaO1zykxCJ2nDBJoghoxnjeCv6lHqEYSaaKdsc+4WoMz5nN/QLsZ7wcXjkrxSrCdvjE10hqjG+zmlz8ZOgSehTsQkcS7pEON6yD4VBGGa0Y6Ve2C/YPptrhH7h+vvgTi38lR7USmuhK9zrZZZCm7uy1VkKfSrVoRa6xJmdQisKA1qjlCj1Er/SjJhrDCrNlLhTK+3UGf/2IVZs3eANJQAAAABJRU5ErkJggg==); */
+  /*   background-size:100% 72px; */
+  /*   -webkit-background-clip:text; */
+  /*   -webkit-text-fill-color:transparent */
+}
   p.first-para, p.first-para-chapter, p.note-p-first {
     text-indent: 0; }
   p.first-para-chapter::first-line {

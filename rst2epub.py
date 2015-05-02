@@ -416,6 +416,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def visit_section(self, node):
         # too many divs is bad for mobi...
+        #print "\tSECTION", section_level, node
         if self.section_level == 0:
             if self.body:
                 self.create_chapter()
@@ -465,7 +466,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 if os.path.exists(item):
                     self.book.add_font(item, os.path.basename(item))
                 else:
-                    raise KeyError
+                    raise KeyError(item)
         js = ''
         if self.js:
 
@@ -474,7 +475,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
                 if os.path.exists(item):
                     self.book.add_js(item, os.path.basename(item))
                 else:
-                    raise KeyError
+                    raise KeyError(item)
         title = ''
         if 'title' in self.fields and self.is_title_page:
             title = self.fields['title']
@@ -580,6 +581,7 @@ class EpubFileOutput(io.FileOutput):
         except IOError, error:
             if not self.handle_io_errors:
                 raise
+            # raise
             print >>sys.stderr, '%s: %s' % (error.__class__.__name__,
                                             error)
             print >>sys.stderr, ('Unable to open destination file for writing '

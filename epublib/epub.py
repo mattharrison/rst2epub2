@@ -106,6 +106,7 @@ class EpubBook:
         self.spine = []
         self.guide = {}
         self.toc_map_root = TocMapNode()
+        print "ROOT", self.toc_map_root
         self.last_node_at_depth = {0 : self.toc_map_root}
 
 
@@ -162,6 +163,7 @@ class EpubBook:
 
 
     def add_html(self, src_path, dest_path, html, id=None):
+        # assert src_path or html
         item = EpubItem()
         item.id = id or 'html_%04d' % (len(self.html_items) + 1)
         item.src_path = src_path
@@ -283,6 +285,9 @@ class EpubBook:
         return max(self.last_node_at_depth.keys())
 
     def add_toc_map_node(self, href, title, depth=None, parent=None):
+        if not title:
+            import pdb;pdb.set_trace()
+        print "TITLE", title
         node = TocMapNode()
         node.href = href
         node.title = title
@@ -326,7 +331,7 @@ class EpubBook:
         tmpl = self.loader.load('content.opf')
         stream = tmpl.generate(book=self)
         data = stream.render('xml')
-        fout.write(data)
+        fout.write(data.encode('utf-8'))
         fout.close()
 
     def _write_items(self):
@@ -392,6 +397,8 @@ def put_file(abs_path, rel_path):
     """
     given a file put it in the rel_path creating necessary dirs
     """
+    if abs_path == rel_path:
+        rel_path = os.path.join('img', os.path.basename(abs_path))
     parents = os.path.dirname(rel_path)
     try:
         os.makedirs(parents)
