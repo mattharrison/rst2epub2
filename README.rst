@@ -17,9 +17,9 @@ Install
 
 running::
 
-  make develop
+  make dev
 
-will create a virtualenv in ``env``. The ``rst2epb.py`` binary will be
+will create a virtualenv in ``env``. The ``rst2epub.py`` binary will be
 located in the ``env/bin/`` directory.
 
 Known to work on linux systems. (Should work on apple, cygwin, MS with
