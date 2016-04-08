@@ -119,6 +119,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.body_len_before_node = {}
         self.section_title = ''
         self.authors = []
+        self.footnotes = []  # keep track of footnotes per chapter
         self.cover_image = None
         self._ignore_image = False
         self.images = {}  # absolute path to book path
@@ -240,6 +241,59 @@ class HTMLTranslator(html4css1.HTMLTranslator):
     def depart_literal_block(self, node):
         html4css1.HTMLTranslator.depart_literal_block(self, node)
         self.body.append('</div>\n')
+
+    def visit_footnote_reference(self, node):
+        """
+        This is the superscript in the text that links to the footnote
+        <footnote_reference auto="1" ids="id2" refid="id3">1</footnote_reference>"""
+        refid = node.attributes['refid']
+        ids = node.attributes['ids'][0]
+        self.body.append('<sup><a href="#{}" id="{}">'.format(refid, ids))
+
+    def depart_footnote_reference(self, node):
+        self.body.append('</a></sup>')
+
+    def visit_footnote(self, node):
+        """
+        AmazonKindlePublishingGuidelines.pdf state that footnotes should look like this
+
+        This sample text has a footnote.<sup><a href="footnotes.html#fn1"
+id="r1">[1]</a></sup>
+<p id="fn1"><a href="chapter01.html#r1">1.</a> This is the footnote text.
+        A footnote has this structure:
+        <footnote auto="1" backrefs="id2" ids="id3" names="1"><label>1</label><paragraph>pandas (<reference refuri="http://pandas.pydata.org">http://pandas.pydata.org</reference>) refers to itself in lower-case, so this
+book will follow suit.</paragraph></footnote>
+        """
+        print node.attributes
+        self.backref = node.attributes['backrefs'][0]
+        self.ids = node.attributes['ids'][0]
+        self.start_footnote_idx = len(self.body)
+        self.body.append('<p id="{}">'.format(self.ids))
+        
+
+    def depart_footnote(self, node):
+        self.body.append('</p>\n')
+        footnote = self.body[self.start_footnote_idx:]
+        self.body = self.body[:self.start_footnote_idx]
+        self.footnotes.extend(footnote)
+        
+                   
+
+    def visit_label(self, node):
+        if self.at('footnote'):
+            self.body.append('<a href="#{}">'.format(
+                self.backref))
+            
+        else:
+            html4css1.HTMLTranslator.visit_label(self, node)
+        
+
+    def depart_label(self, node):
+        if self.at('footnote'):
+            self.body.append('</a>&nbsp;-&nbsp;')
+        else:
+            html4css1.HTMLTranslator.depart_label(self, node)
+            
 
     def visit_meta(self, node):
         # support gutenberg extensions
@@ -447,6 +501,11 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.sections.append(self.body)
         self.body = []
         body = ''.join(self.sections[-1])
+        if self.footnotes:
+            # add footnotes to end of chapter
+            body += '<br/>'
+            body += ''.join(self.footnotes)
+            self.footnotes = []
         if smartypants:
             #body = smartypants.smartyPants(body)
             # pass need to ignore pre contents...
