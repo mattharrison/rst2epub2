@@ -137,6 +137,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.toc_entry = True  # page that has entry in TOC and NCX
         self.parent_level = 0
         self.guide_type=None
+        self.first_admonition_para = False
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
@@ -183,6 +184,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         else:
             html4css1.HTMLTranslator.depart_literal(self, node)
 
+    def visit_admonition(self, node):
+        self.first_admonition_para = True
+        html4css1.HTMLTranslator.visit_admonition(self, node)
+
+    def depart_admonition(self, node):
+        self.first_admonition_para = False
+        html4css1.HTMLTranslator.depart_admonition(self, node)
 
     def visit_paragraph(self, node):
         if self.at('index'):
@@ -196,8 +204,9 @@ class HTMLTranslator(html4css1.HTMLTranslator):
             self.context.append('</p>\n')
 
         elif self.at('admonition'):
-            if self.first_paragraph:
-                self.body.append(self.starttag(node, 'p', '', **{'class':'note-first-p'}))
+            if self.first_admonition_para:
+                self.body.append(self.starttag(node, 'p', '', **{'class':'note-p-first'}))
+                self.first_admonition_para = False
             else:
                 self.body.append(self.starttag(node, 'p', '', **{'class':'note-p'}))
             self.context.append('</p>\n')
@@ -264,6 +273,7 @@ id="r1">[1]</a></sup>
         <footnote auto="1" backrefs="id2" ids="id3" names="1"><label>1</label><paragraph>pandas (<reference refuri="http://pandas.pydata.org">http://pandas.pydata.org</reference>) refers to itself in lower-case, so this
 book will follow suit.</paragraph></footnote>
         """
+        # note that footnotes can't have newlines in them!
         print node.attributes
         self.backref = node.attributes['backrefs'][0]
         self.ids = node.attributes['ids'][0]
