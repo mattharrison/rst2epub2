@@ -17,20 +17,20 @@ env:
 deps: env packages/.done
 	# see http://tartley.com/?p=1423&cpage=1
 	# --upgrade needed to force local (if there's a system install)
-	$(PIP) install --no-index --find-links=file://$${PWD}/packages -r requirements/install.txt
+	$(PIP) install --no-index --find-links=file://$${PWD}/packages
 
 packages/.done:
 	mkdir packages; \
-	$(PIP) install --download packages -r requirements/install.txt && \
+	$(PIP) install --download packages  && \
 	touch packages/.done
 
 testdeps: deps packages/.test.done
-	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages -r requirements/install.txt ;\
-	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages -r requirements/testing.txt
+	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages  ;\
+	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages
 
 packages/.test.done:
 	mkdir packages; \
-	$(PIP) install --download packages -r requirements/testing.txt && \
+	$(PIP) install --download packages && \
 	touch packages/.test.done
 
 
