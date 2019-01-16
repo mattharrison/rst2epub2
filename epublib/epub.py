@@ -26,6 +26,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+from __future__ import print_function
+
 import io
 import itertools
 import mimetypes
@@ -106,7 +108,7 @@ class EpubBook:
         self.spine = []
         self.guide = {}
         self.toc_map_root = TocMapNode()
-        print "ROOT", self.toc_map_root
+        print("ROOT", self.toc_map_root)
         self.last_node_at_depth = {0: self.toc_map_root}
 
     def set_title(self, title):
@@ -124,6 +126,7 @@ class EpubBook:
     def get_meta_tags(self):
         l = []
         for meta_name, meta_value, meta_attr in self.meta_info:
+            meta_name = to_valid_tag_name(meta_name)
             begin_tag = '<dc:%s' % meta_name
             if meta_attr:
                 for attr_name, attr_value in meta_attr.iteritems():
@@ -298,7 +301,7 @@ class EpubBook:
         if not title:
             import pdb
             pdb.set_trace()
-        print "TITLE", title
+        print("TITLE", title)
         node = TocMapNode()
         node.href = href
         node.title = title
@@ -405,6 +408,14 @@ class EpubBook:
         self._write_toc_ncx()
 
 
+def to_valid_tag_name(txt):
+    res = []
+    for char in txt:
+        if char.isalpha() or char == '_':
+            res.append(char)
+    return ''.join(res)
+
+
 def put_file(abs_path, rel_path):
     """
     given a file put it in the rel_path creating necessary dirs
@@ -415,7 +426,7 @@ def put_file(abs_path, rel_path):
     try:
         os.makedirs(parents)
 
-    except OSError, e:
+    except OSError as e:
         import errno
         if e.errno != errno.EEXIST or not os.path.isdir(parents):
             raise

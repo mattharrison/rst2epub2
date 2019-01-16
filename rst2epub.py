@@ -40,13 +40,15 @@ TODO:
 * Check xhtml validation
 
 """
+from __future__ import print_function
+from contextlib import contextmanager
 import os
 import sys
 import tempfile
 
 import docutils
 
-from contextlib import contextmanager
+
 from docutils import io, nodes
 from docutils.core import Publisher, default_description, \
     default_usage
@@ -153,7 +155,7 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         try:
             self.in_node[node.tagname] -= 1
         except KeyError:
-            print node.tagname
+            print(node.tagname)
         html4css1.HTMLTranslator.dispatch_departure(self, node)
 
     def at(self, nodename):
@@ -284,7 +286,7 @@ id="r1">[1]</a></sup>
 book will follow suit.</paragraph></footnote>
         """
         # note that footnotes can't have newlines in them!
-        print "FOOTNOTE", node, node.attributes
+        print("FOOTNOTE", node, node.attributes)
         self.backref = (node.attributes['backrefs'] or node.attributes['names'])[0]
         self.ids = node.attributes['ids'][0]
         self.start_footnote_idx = len(self.body)
@@ -330,7 +332,7 @@ book will follow suit.</paragraph></footnote>
             pass
         txt = node.astext()
         if self.at('index'):
-            print "INDEX NODE", node.parent
+            print("INDEX NODE", node.parent)
             # no support in epub :(
             return
         if self.at('field_name'):
@@ -412,7 +414,7 @@ book will follow suit.</paragraph></footnote>
                     # punt on windows
                     source = source[1:]
                     node['uri'] = source
-                print "\nUPDATED", source, node, os.path.splitdrive(source)[1]
+                print("\nUPDATED", source, node, os.path.splitdrive(source)[1])
             self.images[abs_path] = source
         if not self._ignore_image:
             # appease epubcheck
@@ -633,7 +635,7 @@ book will follow suit.</paragraph></footnote>
             kw = {}
         #root_dir = os.path.join(tempfile.gettempdir(), 'epub')
         root_dir = os.path.join(tempfile.mkdtemp(**kw), 'epub')
-        print "\n\nROOT", root_dir
+        print("\n\nROOT", root_dir)
         for k,v in self.fields.items():
             if k == 'creator':
                 self.book.add_creator(v)
@@ -649,7 +651,7 @@ book will follow suit.</paragraph></footnote>
             self.book.add_image(abs_path, dst_path, id='image_{0}'.format(i))
         self.book.create_book(root_dir)
         self.book.create_archive(root_dir, root_dir + '.epub')
-        return open(root_dir + '.epub').read()
+        return open(root_dir + '.epub', 'rb').read()
 
 XHTML_WRAPPER = u'''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
@@ -674,14 +676,14 @@ class EpubFileOutput(io.FileOutput):
         try:
             self.destination = open(self.destination_path, 'wb')
 
-        except IOError, error:
+        except IOError as error:
             if not self.handle_io_errors:
                 raise
             # raise
-            print >>sys.stderr, '%s: %s' % (error.__class__.__name__,
-                                            error)
-            print >>sys.stderr, ('Unable to open destination file for writing '
-                                 '(%r).  Exiting.' % self.destination_path)
+            print('%s: %s' % (error.__class__.__name__,
+                                            error))
+            print('Unable to open destination file for writing '
+                  '(%r).  Exiting.' % self.destination_path)
             sys.exit(1)
         self.opened = 1
 
