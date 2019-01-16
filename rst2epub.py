@@ -274,8 +274,8 @@ id="r1">[1]</a></sup>
 book will follow suit.</paragraph></footnote>
         """
         # note that footnotes can't have newlines in them!
-        print node.attributes
-        self.backref = node.attributes['backrefs'][0]
+        print "FOOTNOTE", node, node.attributes
+        self.backref = (node.attributes['backrefs'] or node.attributes['names'])[0]
         self.ids = node.attributes['ids'][0]
         self.start_footnote_idx = len(self.body)
         self.body.append('<p id="{}">'.format(self.ids))
@@ -397,7 +397,15 @@ book will follow suit.</paragraph></footnote>
             self._ignore_image = True
         else:
             source = node.get('uri')
-            self.images[os.path.abspath(source)] = source
+            abs_path = os.path.abspath(source)
+            if abs_path == source:
+                # put absolute-pathed images into OEBPS directory
+                if source.startswith('/'):
+                    # punt on windows
+                    source = source[1:]
+                    node['uri'] = source
+                print "\nUPDATED", source, node, os.path.splitdrive(source)[1]
+            self.images[abs_path] = source
         if not self._ignore_image:
             # appease epubcheck
             self.body.append('<div>\n')
@@ -606,7 +614,13 @@ book will follow suit.</paragraph></footnote>
     depart_thead=depart_tbody
 
     def get_output(self):
-        root_dir = os.path.join(tempfile.gettempdir(), 'epub')
+        if sys.platform == 'darwin':
+            kw = {'dir':'/tmp'}
+        else:
+            kw = {}
+        #root_dir = os.path.join(tempfile.gettempdir(), 'epub')
+        root_dir = os.path.join(tempfile.mkdtemp(**kw), 'epub')
+        print "\n\nROOT", root_dir
         for k,v in self.fields.items():
             if k == 'creator':
                 self.book.add_creator(v)
