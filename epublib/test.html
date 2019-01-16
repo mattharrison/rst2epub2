@@ -1,0 +1,219 @@
+<!DOCTYPE html SYSTEM "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<title>KF8 SAMPLE TEMPLATE</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <style>
+  /*
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.com/yui/license.html
+version: 3.3.0
+build: 3167
+*/
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}
+
+@font-face {
+	font-family: "Booter 5-0";
+	font-style: normal;
+	font-weight: normal;
+	src: url(../fonts/Booter_5-0.ttf);
+}
+
+body {
+	font-family: "Booter 5-0";
+	font-size: 210%;
+}
+
+div.fs {
+  height: 1024px;
+  width: 600px;
+  position: relative;
+}
+
+div.fs div {
+  position: absolute;
+}
+
+div.fs a {
+  display: block;
+  width : 100%;
+  height: 100%;
+}
+
+.image {
+  position: absolute;
+  height: 1024px;
+  width: 600px;
+}
+
+
+div.note {
+	top: 10%;
+	left: 0%;
+	width: 100%;
+}
+
+div.center {
+	position: absolute;
+	top: 42%;
+	left: 29%;
+	width: 40%;
+  border: 4px solid #000000;
+}
+
+h1 {	font-family: "Booter 5-0";
+	font-size: 45px;
+	position: relative;
+	text-align: center;
+	text-shadow: 1px 1px 3px #1a1a1a;
+	top: 0px;
+}
+h2 {	font-family: "Booter 5-0";
+	font-size: 32px;
+	position: relative;
+	text-align: center;
+	font-style: italic;
+	text-shadow: 1px 1px 3px #1a1a1a;
+	top: 30px;
+}
+
+p {
+	font-family: "Booter 5-0";
+	font-style: italic;
+	position: relative;
+	text-align: center;
+	text-shadow: 1px 1px 3px #1a1a1a;
+}
+
+p.textzoom {
+	font-size: 150%;
+	margin: 20%;
+	top: 18%;
+	z-index: 1;
+}
+
+div.target-mag {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  /* UI Styling */
+  border: 5px solid  #000000;
+}
+
+/* Actual image resolution */
+div.target-mag img {
+  position: absolute;
+
+  height: 3000px;
+  /*height: 1536px;
+    width: 900px;*/
+  width: 1800px;
+}
+div.target-mag-parent {
+	width:100%;
+	height:100%;
+	display:none;
+}
+div.target-mag-lb {
+	height: 100%;
+	width: 100%;
+	background: #333333;
+	opacity:.75;
+}
+
+/* Use the following to define the zoom levels */
+/* zoom100 equals the default display size */
+
+div.target-mag img.zoom100 {
+  position: absolute;
+  height: 1024px;
+  width: 600px;
+}
+
+/* Enter the actual height and width of the image here: this is the zoom factor, regardless of what number you enter in the tag at zoom### - that number only need be larger than 100, but otherwise has no effect on the amount of magnification */
+
+div.target-mag img.zoom150 {
+  position: absolute;
+  height: 1536px;
+  width: 900px;
+}
+
+/* Tap Target Zone Size & Position */
+#zoom1 {
+	top: 30%;
+	left: 15%;
+	height: 45%;
+	width: 70%;
+}
+/* Magnified Region Size & Position */
+#zoom1-magTarget {
+	top: 21%;
+	left: 0%;
+	height: 62%;
+	width: 100%;
+}
+/* Image Offset */
+#zoom1-magTarget img {
+	top: -77%;
+	left: -25%;
+}
+
+
+/* Magnified text box formatting */
+
+/* Default content */
+
+p.text {
+	font-size: 100%;
+	border: 4px solid #000000;
+	padding: 10px;
+}
+
+.app-amzn-magnify {
+ background-color: green;
+border: 5px solid  #000000;
+opacity: .5;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<!-- This is an example of how to use region zoom to magnify an image -->
+	<div class="fs">
+		<div>
+			<img src="img3.jpeg" alt="The Serpent Ring" class="image"/>
+		</div>
+
+		<div class="note">
+			<h1>Example of Panel View<br/>
+			with Lightbox effect</h1>
+			<h2>showing how to use live text<br/>
+			within a magnified image</h2>
+		</div>
+
+
+     <div id="zoom1">
+<!--			<a class="app-amzn-magnify" data-app-amzn-magnify="{'targetId':'zoom1-magTargetParent', 'ordinal':4}" works='False'> -->
+			<a class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"zoom1-magTargetParent", "ordinal":4}' works='True'>
+              <div><p class="center">BEFORE</p></div>
+            </a>
+      </div>
+
+      <div id="zoom1-magTargetParent" class="target-mag-parent">
+        <div class="target-mag-lb"></div>
+        <div id="zoom1-magTarget" class="target-mag">
+          <h2>AFTER</h2>
+          <img src="img1.jpeg" alt="">
+        </div>
+      </div>
+
+
+	</div>
+
+</body>
+</html>

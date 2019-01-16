@@ -1,41 +1,33 @@
-from os import path
-import posixpath
+import os.path
 
-from genshi.util import striptags
-
-#from docutils import writers
-from docutils.writers import html4css1
-from docutils.frontend import OptionParser
-
-from sphinx.builders.html import StandaloneHTMLBuilder
-from sphinx.builders import Builder
-from sphinx.highlighting import PygmentsBridge
-from sphinx.writers.html import HTMLTranslator
-
-from sphinx.util.console import bold, darkgreen, brown
-from sphinx.util.nodes import inline_all_toctrees
-from sphinx.util.osutil import copyfile, relative_uri
-
-from epublib import epub
 import rst2epub
 
-# dublin core meta data
-DC_ITEMS = set('title,creator,subject,description,publisher,contributor,date,type,format,identifier,source,language,relation,coverage,rights'.split(','))
+from docutils.frontend import OptionParser
+from docutils.writers import html4css1
+from epublib import epub
+from genshi.util import striptags
+from sphinx.builders import Builder
+from sphinx.highlighting import PygmentsBridge
+from sphinx.util.console import bold, darkgreen
+from sphinx.util.nodes import inline_all_toctrees
+from sphinx.util.osutil import copyfile, relative_uri
+from sphinx.writers.html import HTMLTranslator
 
-#class MobiWriter(writers.Writer):
+
+# dublin core meta data
+DC_ITEMS = set('title', 'creator', 'subject', 'description', 'publisher',
+               'contributor', 'date', 'type', 'format', 'identifier', 'source',
+               'language', 'relation', 'coverage', 'rights')
+
 class MobiWriter(html4css1.Writer):
     def __init__(self, builder):
         html4css1.Writer.__init__(self)
         self.builder = builder
 
     def translate(self):
-        #visitor = MobiTranslator(self.document, self.builder)
         visitor = MobiTranslator(self.builder, self.document)
         self.document.walkabout(visitor)
         self.output = visitor.get_output()
-
-
-
 
 
 class MobiTranslator(HTMLTranslator):
@@ -51,12 +43,12 @@ class MobiTranslator(HTMLTranslator):
         self.doc_path = document.attributes['source']
 
     def visit_compound(self, node):
-        #print "COMPOUND", node
+        # print "COMPOUND", node
         # only adding items to table of contents if in toctree
         if 'toctree-wrapper' in node['classes']:
             try:
                 self.builder.ebook.add_toc_page(order=self.next_order())
-            except AssertionError as e:
+            except AssertionError:
                 pass
             self.add_to_toc = True
 
@@ -68,7 +60,6 @@ class MobiTranslator(HTMLTranslator):
         val = self.order
         self.order += 1
         return val
-
 
     def dispatch_visit(self, node):
         """
@@ -83,14 +74,20 @@ class MobiTranslator(HTMLTranslator):
             % (method.__name__, node_name))
         return method(node)
 
-
     def create_chapter(self):
         body = ''.join(self.body)
         self.body = []
         book = self.builder.ebook
         # check for css overrides
-        css = ''.join(['<link rel="stylesheet" href="{0}" type="text/css" media="all" />'.format(path.basename(item)) for item in self.css])
-        src_css = path.join(path.dirname(rst2epub.epub.__file__), 'templates', 'main.css')
+        css_pattern = \
+            '<link rel="stylesheet" href="{0}" type="text/css" media="all" />'
+        css = ''
+        for item in self.css:
+            css += css_pattern.format(os.path.basename(item)) + '\n'
+        css = css.rstrip()
+
+        src_css = os.path.join(os.path.dirname(rst2epub.epub.__file__),
+                               'templates', 'main.css')
         dst_css = 'main.css'
         book.add_css(src_css, dst_css)
         src_path = ''
@@ -105,19 +102,11 @@ class MobiTranslator(HTMLTranslator):
         book.add_spine_item(item)
         if self.add_to_toc:
             book.add_toc_map_node(item.dest_path,
-                                  self._title,
-                                  #parent=self.parent)
-                                  )
+                                  self._title)
         self._title = None
         self.parent = None
 
     def get_output(self):
-        #print "IMAGE", self._images
-
-        # for i, img_path in enumerate(self._images):
-        #     parents, name = path.split(img_path)
-        #     self.builder.ebook.add_image(img_path, name, id='image_{0}'.format(i)                                         )
-
         return self.builder.get_output_data()
 
     def implement_me(self, *args):
@@ -125,22 +114,25 @@ class MobiTranslator(HTMLTranslator):
 
     def visit_image(self, node):
         olduri = node['uri']
-        import pdb;pdb.set_trace()
+        import pdb
+        pdb.set_trace()
         # rewrite the URI if the environment knows about it
         # if olduri in self.builder.images:
         #     node['uri'] = posixpath.join(self.builder.imgpath,
         #                                  self.builder.images[olduri])
         #                                  #import pdb; pdb.set_trace()
-        print "IMAGE!!!", node, node['uri'], path.abspath(node['uri'])
-        if path.abspath(olduri) != olduri:
+        print "IMAGE!!!", node, node['uri'], os.path.abspath(node['uri'])
+        if os.path.abspath(olduri) != olduri:
             pass
             # # relative
-            # dest = path.join(self.builder.outdir,olduri)
+            # dest = os.path.join(self.builder.outdir,olduri)
             # print "COPYING TO", dest
-            # olduri = path.join(path.dirname(self.doc_path),
+            # olduri = os.path.join(os.path.dirname(self.doc_path),
             #                    dest)
-        self._images.add(path.abspath(olduri))
-        self.builder.ebook.add_image(path.abspath(olduri), olduri, id='image_{0}'.format(len(self._images)))
+        self._images.add(os.path.abspath(olduri))
+        self.builder.ebook.add_image(os.path.abspath(olduri),
+                                     olduri,
+                                     id='image_{0}'.format(len(self._images)))
         HTMLTranslator.visit_image(self, node)
 
     def visit_section(self, node):
@@ -154,16 +146,16 @@ class MobiTranslator(HTMLTranslator):
             self.create_chapter()
 
     def depart_title(self, node):
-        #print "--TITLE", node.text
+        # print "--TITLE", node.text
         if not self._title:
             self._title = striptags(''.join(self.body[1:]))
-        print "\n\n**title",self.section_level,''.join(self.body[1:])[:150]
-        if node.parent.hasattr('ids') and node.parent['ids'] and \
-            self.section_level <= int(self.builder.config.mobi_chapter_level):
-            print "TITLE",self.section_level,node.parent['ids'][0]
-            #self._title = node.parent['ids'][0]
+        print "\n\n**title", self.section_level, ''.join(self.body[1:])[:150]
+        low_level = self.section_level \
+            <= int(self.builder.config.mobi_chapter_level)
+        if node.parent.getattr('ids', False) and low_level:
+            print "TITLE", self.section_level, node.parent['ids'][0]
             self._title = striptags(''.join(self.body[1:]))
-            print "\t",str(node)[:50]
+            print "\t", str(node)[:50]
             print "\tBODY", self.body[:4]
         else:
             print "FALSE"
@@ -189,7 +181,8 @@ class MobiBuilder(Builder):
         assert self.config.mobi_title
         self.ebook.set_title(self.config.mobi_title)
         if self.config.mobi_cover:
-            self.ebook.add_cover(self.config.mobi_cover[0], title=self.config.mobi_title)
+            self.ebook.add_cover(self.config.mobi_cover[0],
+                                 title=self.config.mobi_title)
         self.do_dublin_core()
         self.document_data = []
         self.docnames = []
@@ -198,7 +191,6 @@ class MobiBuilder(Builder):
 
     def do_dublin_core(self):
         for key in self.config.values:
-            #value, _ = self.config.values[key]
             value = getattr(self.config, key)
             if not value:
                 continue
@@ -209,7 +201,6 @@ class MobiBuilder(Builder):
                         continue
                     print "\t***ADDING", key, value
                     self.ebook.add_meta(key, value)
-
 
     def init_highlighter(self):
         # determine Pygments style and create the highlighter
@@ -233,7 +224,6 @@ class MobiBuilder(Builder):
         # ignore source path
         return self.get_target_uri(to, typ)
 
-
     def write(self, *ignored):
         writer = MobiWriter(self)
         docsettings = OptionParser(
@@ -248,14 +238,15 @@ class MobiBuilder(Builder):
         self.post_process_images(tree)
         targetname = self.config.project + '.epub'
         tree.settings = docsettings
-        writer.write(tree, rst2epub.EpubFileOutput(destination_path=path.join(self.outdir, targetname)))
+        writer.write(
+            tree,
+            rst2epub.EpubFileOutput(
+                destination_path=os.path.join(self.outdir, targetname)))
 
     def get_output_data(self):
-        #return '1'
         root_dir = '/tmp/mobiext'
-        #self.copy_image_files()
         self.ebook.create_book(root_dir)
-        book_name =  root_dir + '.epub'
+        book_name = root_dir + '.epub'
         self.ebook.create_archive(root_dir, book_name)
 
         if book_name.endswith('.epub'):
@@ -266,20 +257,17 @@ class MobiBuilder(Builder):
 
         return open(root_dir + '.epub').read()
 
-        #return self.ebook.readdata()
-
     def finish(self):
         # copy image files
         if self.images:
             self.info(bold('copying images...'), nonl=1)
             for src, dest in self.images.iteritems():
                 self.info(' '+src, nonl=1)
-                dest_file = path.join(self.outdir, dest)
-                copyfile(path.join(self.srcdir, src),
+                dest_file = os.path.join(self.outdir, dest)
+                copyfile(os.path.join(self.srcdir, src),
                          dest_file)
             self.info()
         print "FIN"
-
 
 
 def setup(app):

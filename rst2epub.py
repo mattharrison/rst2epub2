@@ -34,31 +34,33 @@ TODO:
 * smartypants option
 * Populate metadata from rst
 * Cover generation
- * see http://blog.threepress.org/2009/11/20/best-practices-in-epub-cover-images/
+ * see
+   http://blog.threepress.org/2009/11/20/best-practices-in-epub-cover-images/
  * Should probably convert pngs to jpegs
 * Check xhtml validation
 
 """
-from contextlib import contextmanager
 import os
 import sys
 import tempfile
 
-from genshi.util import striptags
 import docutils
+
+from contextlib import contextmanager
+from docutils import io, nodes
 from docutils.core import Publisher, default_description, \
     default_usage
-from docutils import io, nodes
 from docutils.parsers.rst import Directive, directives
 from docutils.readers import standalone
 from docutils.writers import html4css1
+
+from epublib import epub
+from genshi.util import striptags
 
 try:
     import smartypants
 except:
     smartypants = None
-
-from epublib import epub
 
 
 @contextmanager
@@ -136,21 +138,21 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.toc_page = False
         self.toc_entry = True  # page that has entry in TOC and NCX
         self.parent_level = 0
-        self.guide_type=None
+        self.guide_type = None
         self.first_admonition_para = False
 
     def dispatch_visit(self, node):
         # mark body length before visiting node
         self.body_len_before_node[node.__class__.__name__] = len(self.body)
         # keep track of parents
-        count = self.in_node.setdefault(node.tagname, 0)
+        self.in_node.setdefault(node.tagname, 0)
         self.in_node[node.tagname] += 1
         html4css1.HTMLTranslator.dispatch_visit(self, node)
 
     def dispatch_departure(self, node):
         try:
             self.in_node[node.tagname] -= 1
-        except KeyError as e:
+        except KeyError:
             print node.tagname
         html4css1.HTMLTranslator.dispatch_departure(self, node)
 
@@ -198,17 +200,21 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         # All text need p's (else breaks epubcheck)
         if self.first_paragraph and not self.at('admonition'):
             if self.section_level == 1:
-                self.body.append(self.starttag(node, 'p', '', **{'class':'first-para-chapter'}))
+                self.body.append(self.starttag(node, 'p', '',
+                                 **{'class': 'first-para-chapter'}))
             else:
-                self.body.append(self.starttag(node, 'p', '', **{'class':'first-para'}))
+                self.body.append(self.starttag(node, 'p', '',
+                                 **{'class': 'first-para'}))
             self.context.append('</p>\n')
 
         elif self.at('admonition'):
             if self.first_admonition_para:
-                self.body.append(self.starttag(node, 'p', '', **{'class':'note-p-first'}))
+                self.body.append(self.starttag(node, 'p', '',
+                                 **{'class': 'note-first-p'}))
                 self.first_admonition_para = False
             else:
-                self.body.append(self.starttag(node, 'p', '', **{'class':'note-p'}))
+                self.body.append(self.starttag(node, 'p', '',
+                                 **{'class': 'note-p'}))
             self.context.append('</p>\n')
         elif self.at('block_quote'):
             self.body.append(self.starttag(node, 'p', '', **{}))
@@ -239,10 +245,13 @@ class HTMLTranslator(html4css1.HTMLTranslator):
         self.append_class_on_child(node, '-first', 0)
 
     def visit_literal_block(self, node):
-        # mobi needs an extra div here, otherwise headings following <pre> are indented poorly
+        # mobi needs an extra div here, otherwise headings following
+        # <pre> are indented poorly
         if self.at('admonition'):
-            self.body.append(self.starttag(node, 'div', CLASS='div-literal-block-admonition'))
-            self.body.append(self.starttag(node, 'pre', CLASS='literal-block-admonition'))
+            self.body.append(self.starttag(node, 'div',
+                             CLASS='div-literal-block-admonition'))
+            self.body.append(self.starttag(node, 'pre',
+                             CLASS='literal-block-admonition'))
         else:
             self.body.append(self.starttag(node, 'div'))
             self.body.append(self.starttag(node, 'pre', CLASS='literal-block'))
@@ -264,7 +273,8 @@ class HTMLTranslator(html4css1.HTMLTranslator):
 
     def visit_footnote(self, node):
         """
-        AmazonKindlePublishingGuidelines.pdf state that footnotes should look like this
+        AmazonKindlePublishingGuidelines.pdf state that footnotes should
+        look like this
 
         This sample text has a footnote.<sup><a href="footnotes.html#fn1"
 id="r1">[1]</a></sup>
@@ -279,31 +289,26 @@ book will follow suit.</paragraph></footnote>
         self.ids = node.attributes['ids'][0]
         self.start_footnote_idx = len(self.body)
         self.body.append('<p id="{}">'.format(self.ids))
-        
 
     def depart_footnote(self, node):
         self.body.append('</p>\n')
         footnote = self.body[self.start_footnote_idx:]
         self.body = self.body[:self.start_footnote_idx]
         self.footnotes.extend(footnote)
-        
-                   
 
     def visit_label(self, node):
         if self.at('footnote'):
             self.body.append('<a href="#{}">'.format(
                 self.backref))
-            
+
         else:
             html4css1.HTMLTranslator.visit_label(self, node)
-        
 
     def depart_label(self, node):
         if self.at('footnote'):
             self.body.append('</a>&nbsp;-&nbsp;')
         else:
             html4css1.HTMLTranslator.depart_label(self, node)
-            
 
     def visit_meta(self, node):
         # support gutenberg extensions
@@ -317,7 +322,10 @@ book will follow suit.</paragraph></footnote>
                 self.cover_image = os.path.abspath(cover_page)
 
     @cwd_decorator
-    def visit_Text(self, node):
+    def visit_Text(self, node):  # noqa
+        def valid_paths(paths):
+            return [os.path.abspath(path) for path in paths if path]
+
         if "Copyright" in str(node):
             pass
         txt = node.astext()
@@ -329,7 +337,7 @@ book will follow suit.</paragraph></footnote>
             self.field_name = node.astext()
         elif self.at('field_body'):
             pass
-        elif self.at('generated'):#  and 'sectnum' in node.get('classes'):
+        elif self.at('generated'):  # and 'sectnum' in node.get('classes'):
             # avoid <generated classes="sectnum">5.1</generated>
             pass
         elif self.at('comment'):
@@ -345,16 +353,16 @@ book will follow suit.</paragraph></footnote>
                 self.create_chapter()
                 self.section_level = 1
             elif txt.startswith('guide:'):
-                self.guide_type=txt.split(':')[-1]
+                self.guide_type = txt.split(':')[-1]
             elif txt.startswith('css:'):
                 paths = txt.split(':')[-1].split(',')
-                self.css = self.css + [os.path.abspath(path) for path in paths if path]
+                self.css = self.css + valid_paths(paths)
             elif txt.startswith('js:'):
                 paths = txt.split(':')[-1].split(',')
-                self.js = self.js + [os.path.abspath(path) for path in paths if path]
+                self.js = self.js + valid_paths(paths)
             elif txt.startswith('font:'):
                 paths = txt.split(':')[-1].split(',')
-                self.font = self.font + [os.path.abspath(path) for path in paths if path]
+                self.font = self.font + valid_paths(paths)
             elif txt == 'nocss':
                 self.css = None
             elif txt.startswith('addimg:'):
@@ -443,7 +451,6 @@ book will follow suit.</paragraph></footnote>
 
     def visit_field_body(self, node):
         if self.first_page:
-            #pass
             # need to deal with para's that have multiple text children
             # such as foo... |copy| foo :(
             self.fields[self.field_name] = node.astext()
@@ -479,7 +486,7 @@ book will follow suit.</paragraph></footnote>
         html4css1.HTMLTranslator.depart_title(self, node)
 
     def depart_author(self, node):
-        start = self.body_len_before_node[node.__class__.__name__]
+        # NEVER USED start = self.body_len_before_node[node.__class__.__name__]
         self.authors.append(node.children[0])
 
     def visit_transition2(self, node):
@@ -488,7 +495,7 @@ book will follow suit.</paragraph></footnote>
 
     def visit_section(self, node):
         # too many divs is bad for mobi...
-        #print "\tSECTION", section_level, node
+        # print "\tSECTION", section_level, node
         if self.section_level == 0:
             if self.body:
                 self.create_chapter()
@@ -507,7 +514,7 @@ book will follow suit.</paragraph></footnote>
     def visit_generated(self, node):
         pass
 
-    #depart_generated = depart_section
+    # depart_generated = depart_section
 
     def visit_index(self, node):
         pass
@@ -525,7 +532,7 @@ book will follow suit.</paragraph></footnote>
             body += ''.join(self.footnotes)
             self.footnotes = []
         if smartypants:
-            #body = smartypants.smartyPants(body)
+            # body = smartypants.smartyPants(body)
             # pass need to ignore pre contents...
             pass
         css = ''
@@ -535,9 +542,10 @@ book will follow suit.</paragraph></footnote>
                 if os.path.exists(item):
                     self.book.add_css(item, os.path.basename(item))
                 else:
-                    self.book.add_css(os.path.join(os.path.dirname(epub.__file__),
+                    self.book.add_css(os.path.join(
+                                      os.path.dirname(epub.__file__),
                                       'templates',
-                                      'main.css'),'main.css')
+                                      'main.css'), 'main.css')
         if self.font:
             for item in self.font:
                 if os.path.exists(item):
@@ -557,7 +565,7 @@ book will follow suit.</paragraph></footnote>
         if 'title' in self.fields and self.is_title_page:
             title = self.fields['title']
         elif self.section_title:
-            title=striptags(self.section_title)
+            title = striptags(self.section_title)
 
         header = css+js
         html = XHTML_WRAPPER.format(body=body,
@@ -566,7 +574,7 @@ book will follow suit.</paragraph></footnote>
         if self.is_title_page:
             self.book.add_title_page(html)
             # clear out toc_map_node
-            self.book.last_node_at_depth = {0:self.book.toc_map_root}
+            self.book.last_node_at_depth = {0: self.book.toc_map_root}
 
             self.is_title_page = False
         elif self.toc_page:
@@ -576,11 +584,16 @@ book will follow suit.</paragraph></footnote>
             dst = '{0}.html'.format(len(self.sections))
             item = self.book.add_html('', dst, html)
             if self.guide_type:
-                self.book.add_guide_item(dst, self.section_title, self.guide_type)
+                self.book.add_guide_item(dst,
+                                         self.section_title,
+                                         self.guide_type)
             self.book.add_spine_item(item)
             parent = self.toc_parents[-1] if self.toc_parents else None
             if self.toc_entry:
-                node = self.book.add_toc_map_node(item.dest_path, striptags(self.section_title), parent=parent) #''.join(self.html_subtitle))
+                node = self.book.add_toc_map_node(
+                    item.dest_path,
+                    striptags(self.section_title),
+                    parent=parent)
             if self.parent_level == 1:
                 self.toc_parents = [node]
             elif self.parent_level == 2:
@@ -610,8 +623,8 @@ book will follow suit.</paragraph></footnote>
     def depart_tbody(self, node):
         pass
 
-    visit_thead=visit_tbody
-    depart_thead=depart_tbody
+    visit_thead = visit_tbody
+    depart_thead = depart_tbody
 
     def get_output(self):
         if sys.platform == 'darwin':
@@ -677,11 +690,11 @@ class epubcontent(nodes.Element):
     # change normal TOC to epubcontent
     tagname = 'epubcontent'
 
+
 class Index(Directive):
     """
     Directive to add entries to the index.
     """
-    #has_content = False
     has_content = True
     required_arguments = 0
     optional_arguments = 1
@@ -695,7 +708,7 @@ class Index(Directive):
         index_node = index(rawsource=text)
         # Parse the directive contents.
         self.state.nested_parse(self.content, self.content_offset,
-            index_node)
+                                index_node)
         targetid = 'index-%s' % Index.count
         Index.count += 1
         target_node = nodes.target('', '', ids=[targetid])
@@ -711,6 +724,7 @@ class Index(Directive):
 indextypes = [
     'single', 'pair', 'double', 'triple', 'see', 'seealso',
 ]
+
 
 def process_index_entry(entry, targetid):
     indexentries = []
@@ -747,14 +761,16 @@ def process_index_entry(entry, targetid):
                 indexentries.append(('single', value, targetid, main))
     return indexentries
 pairindextypes = {
-    'module':    ('module'),
-    'keyword':   ('keyword'),
-    'operator':  ('operator'),
-    'object':    ('object'),
+    'module': ('module'),
+    'keyword': ('keyword'),
+    'operator': ('operator'),
+    'object': ('object'),
     'exception': ('exception'),
     'statement': ('statement'),
-    'builtin':   ('built-in function'),
+    'builtin': ('built-in function'),
 }
+
+
 class index(nodes.Invisible, nodes.Inline, nodes.TextElement):
     """Node for index entries.
 
@@ -764,6 +780,7 @@ class index(nodes.Invisible, nodes.Inline, nodes.TextElement):
 
     *entrytype* is one of "single", "pair", "double", "triple".
     """
+
 
 class IndexOld(Directive):
     """
@@ -777,7 +794,7 @@ class IndexOld(Directive):
     count = 0
 
     def run(self):
-        return [] #None #ignore for now
+        return []  # None #ignore for now
         # see sphinx.directives.other.Index for hints
         arguments = self.arguments[0].split('\n')
         targetid = 'index-%s' % Index.count
@@ -791,14 +808,16 @@ class IndexOld(Directive):
             ne.extend(process_index_entry(entry, targetid))
         return [indexnode, targetnode]
 
+
 class Contents(Directive):
     required_arguments = 0
     optional_arguments = 1
     final_argument_whitespace = True
-    option_spec = { 'class': directives.class_option,
-                    'local': directives.flag,
-                    'depth': directives.nonnegative_int,
-                    'page-numbers': directives.flag }
+    option_spec = {'class': directives.class_option,
+                   'local': directives.flag,
+                   'depth': directives.nonnegative_int,
+                   'page-numbers': directives.flag}
+
     def run(self):
         return [epubcontent()]
 
@@ -809,23 +828,22 @@ class Parser(docutils.parsers.rst.Parser):
         directives.register_directive('index', Index)
         docutils.parsers.rst.Parser.__init__(self)
 
-# fix envvar !!!
-from docutils import nodes
-class envvar(nodes.Inline, nodes.TextElement): pass
+
+# FIXME envvar !!!
+class envvar(nodes.Inline, nodes.TextElement):
+    pass
+# envvar = nodes.literal
+
 def ignore_role(role, rawtext, text, lineno, inliner,
-                       options={}, content=[]):
-    return [envvar(rawtext, text)],[]
+                options={}, content=[]):
+    return [envvar(rawtext, text)], []
 
-    #class envvar(Inline, TextElement):
 
-#class envvar(nodes.Inline, nodes.TextElement): pass
-#envvar = nodes.literal
-
-from docutils.parsers.rst import roles
+from docutils.parsers.rst import roles  # noqa
 roles.register_local_role('envvar', ignore_role)
-#roles.register_local_role('envvar', envvar)
+# roles.register_local_role('envvar', envvar)
 
-def main(args):
+def main(args=sys.argv):
     argv = None
     reader = standalone.Reader()
     reader_name = 'standalone'
@@ -842,12 +860,12 @@ def main(args):
     publisher = Publisher(reader, parser, writer, settings,
                           destination_class=EpubFileOutput)
     publisher.set_components(reader_name, parser_name, writer_name)
-    description = ('Generates epub books from reStructuredText sources.  ' + default_description)
+    description = ('Generates epub books from reStructuredText sources.  ' +
+                   default_description)
 
-    output = publisher.publish(argv, usage, description,
-                               settings_spec, settings_overrides,
-                               config_section=config_section,
-                               enable_exit_status=enable_exit_status)
+    publisher.publish(argv, usage, description, settings_spec,
+                      settings_overrides, config_section=config_section,
+                      enable_exit_status=enable_exit_status)
 
 if __name__ == '__main__':
     if '--doctest' in sys.argv:

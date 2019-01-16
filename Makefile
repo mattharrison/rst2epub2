@@ -2,7 +2,7 @@ SHELL = /bin/bash
 # variables to use sandboxed binaries
 PIP := env/bin/pip
 PY := env/bin/python
-TEST-BIN := test-env/bin/
+TEST-BIN := test-env/bin
 NOSE := $(TEST-BIN)/nosetests
 COV := $(TEST-BIN)/coverage
 TEST-PIP := $(TEST-BIN)/pip
@@ -25,12 +25,12 @@ packages/.done:
 	touch packages/.done
 
 testdeps: deps packages/.test.done
-	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages  ;\
-	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages
+	$(TEST-PIP) install --no-index --find-links=file://$${PWD}/packages \
+	    nose coverage
 
 packages/.test.done:
 	mkdir packages; \
-	$(PIP) install --download packages && \
+	$(PIP) install --download packages nose coverage && \
 	touch packages/.test.done
 
 
@@ -52,7 +52,7 @@ test-env:
 	virtualenv test-env
 
 .PHONY: test
-test: test-env deps testdeps build
+test: clean test-env deps testdeps build
 	#$(TEST-PIP) uninstall --force rst2epub2; $(TEST-PIP) install dist/rst2epub*;\
 	$(TEST-PY) setup.py develop;\
 	$(NOSE); $(COV) run $(TEST-BIN)/rst2epub.py --traceback -r 3 sample/sample.rst /tmp/sample.epub; $(COV) html -d html-cov
@@ -66,5 +66,6 @@ upload: env
 	$(PY) setup.py sdist register upload
 
 .PHONY: clean
-clean:
+clean: rm_env
+	rm -rf test-env packages/.*done
 	rm -rf dist *.egg-info
